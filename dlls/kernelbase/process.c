@@ -1322,6 +1322,7 @@ BOOL WINAPI DECLSPEC_HOTPATCH IsWow64Process( HANDLE process, PBOOL wow64 )
     status = NtQueryInformationProcess( process, ProcessWow64Information, &pbi, sizeof(pbi), NULL );
     if (!status) *wow64 = !!pbi;
     return set_ntstatus( status );
+    }
 }
 
 /*********************************************************************

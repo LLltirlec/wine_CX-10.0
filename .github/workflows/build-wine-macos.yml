@@ -1,115 +1,109 @@
-name: Build Wine for MacOS
+name: Build Wine for macOS
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
-  workflow_dispatch:
 
 jobs:
-  build:
+  build-wine:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-    - name: Install and verify bison
-      run: |
-        arch -x86_64 brew install bison
-        echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
-        bison --version
+      - name: Install Xcode Command Line Tools
+        run: |
+          arch -x86_64 xcode-select --install || echo "Xcode Command Line Tools already installed"
 
-    - name: Install other dependencies
-      run: |
-        brew update
-        brew install \
-          flex \
-          gcc \
-          mingw-w64 \
-          pkgconfig \
-          gnutls \
-          freetype \
-          libpng \
-          libxslt \
-          gstreamer \
-          gettext
+      - name: Install Homebrew
+        run: |
+          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" -- --prefix=/usr/local
 
-    - name: Setup environment
-      run: |
-        echo "HOMEBREW_PREFIX=$(brew --prefix)" >> $GITHUB_ENV
-        echo "BISON_PATH=$(brew --prefix bison)/bin" >> $GITHUB_ENV
-        echo "LDFLAGS=-L$(brew --prefix bison)/lib" >> $GITHUB_ENV
-        echo "CPPFLAGS=-I$(brew --prefix bison)/include" >> $GITHUB_ENV
+      - name: Update PATH for Homebrew
+        run: |
+          echo "/usr/local/bin" >> $GITHUB_PATH
+          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
 
-    - name: Verify PATH and bison
-      run: |
-        echo "Current PATH: $PATH"
-        which bison
-        bison --version
-        echo "Bison location: $(brew --prefix bison)/bin/bison"
+      - name: Install dependencies
+        run: |
+          arch -x86_64 brew update
+          arch -x86_64 brew install \
+            bison \
+            flex \
+            gcc \
+            mingw-w64 \
+            pkgconfig \
+            gnutls \
+            freetype \
+            libpng \
+            libxslt \
+            gstreamer \
+            gettext
 
-    - name: Clone Wine repository
-      run: |
-        git clone https://github.com/wine-mirror/wine.git
-        cd wine
+      - name: Verify bison installation
+        run: arch -x86_64 bison --version
 
-    - name: Create build directory
-      run: |
-        mkdir -p wine/config
-        mkdir -p wine/build
+        - name: Clone Wine repository
+          run: |
+            git clone https://github.com/wine-mirror/wine.git
+            cd wine
 
-    - name: Configure Wine
-      run: |
-        cd wine/config
-        PATH="$(brew --prefix bison)/bin:$PATH" arch -x86_64 ../configure \
-          --prefix="${GITHUB_WORKSPACE}/wine/build" \
-          --enable-win64 \
-          CFLAGS="-O2" \
-          CXXFLAGS="-O2" \
-          YACC="$(brew --prefix bison)/bin/bison"
+        - name: Create build directory
+          run: |
+            mkdir -p wine/config
+            mkdir -p wine/build
 
-    - name: Build Wine
-      run: |
-        cd wine/config
-        arch -x86_64 make -j$(sysctl -n hw.ncpu)
+        - name: Configure Wine
+          run: |
+            cd wine/config
+            PATH="$(brew --prefix bison)/bin:$PATH" arch -x86_64 ../configure \
+              --prefix="${GITHUB_WORKSPACE}/wine/build" \
+              --enable-win64
 
-    - name: Install Wine
-      run: |
-        cd wine/config
-        make install
+        - name: Build Wine
+          run: |
+            cd wine/config
+            arch -x86_64 make -j$(sysctl -n hw.ncpu)
 
-    - name: Create artifact
-      run: |
-        cd "${GITHUB_WORKSPACE}"
-        tar czf wine-macos-x64.tar.gz wine/build/
+        - name: Install Wine
+          run: |
+            cd wine/config
+            make install
 
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: wine-macos-x64
-        path: wine-macos-x64.tar.gz
-        retention-days: 7
+        - name: Create artifact
+          run: |
+            cd "${GITHUB_WORKSPACE}"
+            tar czf wine-macos-x64.tar.gz wine/build/
 
-    - name: Create Release
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: wine-macos-${{ github.sha }}
-        release_name: Wine MacOS Build ${{ github.sha }}
-        draft: false
-        prerelease: false
+        - name: Upload build artifact
+          uses: actions/upload-artifact@v3
+          with:
+            name: wine-macos-x64
+            path: wine-macos-x64.tar.gz
+            retention-days: 7
 
-    - name: Upload Release Asset
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: wine-macos-x64.tar.gz
-        asset_name: wine-macos-x64.tar.gz
-        asset_content_type: application/gzip
+        - name: Create Release
+          if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+          id: create_release
+          uses: actions/create-release@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            tag_name: wine-macos-${{ github.sha }}
+            release_name: Wine MacOS Build ${{ github.sha }}
+            draft: false
+            prerelease: false
+
+        - name: Upload Release Asset
+          if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+          uses: actions/upload-release-asset@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            upload_url: ${{ steps.create_release.outputs.upload_url }}
+            asset_path: wine-macos-x64.tar.gz
+            asset_name: wine-macos-x64.tar.gz
+            asset_content_type: application/gzip
