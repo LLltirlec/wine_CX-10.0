@@ -1,4 +1,4 @@
-name: Build Wine_CX for MacOS
+name: Build Wine for MacOS
 
 on:
   push:
@@ -16,56 +16,47 @@ jobs:
 
     - name: Setup x86_64 Homebrew
       run: |
-        sudo mkdir -p /usr/local/{bin,Cellar}
-        sudo chown -R $(whoami) /usr/local
+        sudo mkdir -p /usr/local/bin
+        sudo mkdir -p /usr/local/Homebrew
         cd /usr/local
-        git clone https://github.com/Homebrew/brew Homebrew
+        sudo git clone https://github.com/Homebrew/brew Homebrew
+        sudo chown -R $(whoami) /usr/local/Homebrew
         eval "$(/usr/local/Homebrew/bin/brew shellenv)"
-        echo "HOMEBREW_CELLAR=/usr/local/Cellar" >> $GITHUB_ENV
-        echo "HOMEBREW_PREFIX=/usr/local" >> $GITHUB_ENV
+        brew update
 
-    - name: Speed up Homebrew
+    - name: Install and verify bison
       run: |
-        echo "HOMEBREW_NO_INSTALL_CLEANUP=1" >> $GITHUB_ENV
-        echo "HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1" >> $GITHUB_ENV
-        echo "HOMEBREW_NO_AUTO_UPDATE=1" >> $GITHUB_ENV
-        brew update --quiet
+        arch -x86_64 /usr/local/Homebrew/bin/brew uninstall bison || true
+        arch -x86_64 /usr/local/Homebrew/bin/brew install bison
+        echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+        /usr/local/opt/bison/bin/bison --version
 
-    - name: Install essential dependencies
+    - name: Install other dependencies
       run: |
-        arch -x86_64 /usr/local/Homebrew/bin/brew install --quiet \
-          svn \
-          bison \
+        arch -x86_64 /usr/local/Homebrew/bin/brew install \
           flex \
           gcc \
-          pkgconfig
-
-    - name: Install library dependencies
-      run: |
-        arch -x86_64 /usr/local/Homebrew/bin/brew install --quiet \
           mingw-w64 \
-          freetype \
+          pkgconfig \
           gnutls \
+          freetype \
           libpng \
           libxslt \
-          gettext
-
-    # Устанавливаем gstreamer отдельно, так как он требует netpbm
-    - name: Install gstreamer
-      run: |
-        arch -x86_64 /usr/local/Homebrew/bin/brew install --quiet \
           gstreamer \
-          gst-plugins-base \
-          gst-plugins-good || true  # игнорируем ошибки gstreamer
+          gettext
 
     - name: Setup environment
       run: |
-        echo "PATH=/usr/local/bin:/usr/local/opt/bison/bin:/usr/local/opt/freetype/bin:$PATH" >> $GITHUB_ENV
-        echo "PKG_CONFIG_PATH=/usr/local/opt/freetype/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
-        echo "LDFLAGS=-L/usr/local/opt/bison/lib -L/usr/local/opt/freetype/lib" >> $GITHUB_ENV
-        echo "CPPFLAGS=-I/usr/local/opt/bison/include -I/usr/local/opt/freetype/include/freetype2" >> $GITHUB_ENV
-        echo "FREETYPE_CFLAGS=-I/usr/local/opt/freetype/include/freetype2" >> $GITHUB_ENV
-        echo "FREETYPE_LIBS=-L/usr/local/opt/freetype/lib -lfreetype" >> $GITHUB_ENV
+        echo "PATH=/usr/local/bin:/usr/local/opt/bison/bin:$PATH" >> $GITHUB_ENV
+        echo "HOMEBREW_PREFIX=/usr/local" >> $GITHUB_ENV
+        echo "LDFLAGS=-L/usr/local/opt/bison/lib" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I/usr/local/opt/bison/include" >> $GITHUB_ENV
+
+    - name: Verify PATH and bison
+      run: |
+        echo "Current PATH: $PATH"
+        which bison
+        /usr/local/opt/bison/bin/bison --version
 
     - name: Clone Wine repository
       run: |
@@ -81,21 +72,22 @@ jobs:
       run: |
         cd wine/config
         PATH="/usr/local/opt/bison/bin:/usr/local/bin:$PATH" \
-        PKG_CONFIG_PATH="/usr/local/opt/freetype/lib/pkgconfig:$PKG_CONFIG_PATH" \
-        FREETYPE_CFLAGS="-I/usr/local/opt/freetype/include/freetype2" \
-        FREETYPE_LIBS="-L/usr/local/opt/freetype/lib -lfreetype" \
         arch -x86_64 ../configure \
           --prefix="${GITHUB_WORKSPACE}/wine/build" \
-          --enable-win64
-          CFLAGS="-O2 -I/usr/local/opt/freetype/include/freetype2" \
+          --enable-win64 \
+          CFLAGS="-O2" \
           CXXFLAGS="-O2" \
-          LDFLAGS="-L/usr/local/opt/freetype/lib" \
           YACC="/usr/local/opt/bison/bin/bison"
 
     - name: Build Wine
       run: |
         cd wine/config
         arch -x86_64 make -j$(sysctl -n hw.ncpu)
+
+    - name: Install Wine
+      run: |
+        cd wine/config
+        make install
 
     - name: Create artifact
       run: |
@@ -108,3 +100,26 @@ jobs:
         name: wine-macos-x64
         path: wine-macos-x64.tar.gz
         retention-days: 7
+
+    - name: Create Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: wine-macos-${{ github.sha }}
+        release_name: Wine MacOS Build ${{ github.sha }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: wine-macos-x64.tar.gz
+        asset_name: wine-macos-x64.tar.gz
+        asset_content_type: application/gzip
