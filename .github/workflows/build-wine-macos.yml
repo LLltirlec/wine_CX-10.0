@@ -14,13 +14,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
 
-      - name: Install Xcode Command Line Tools
-        run: |
-          arch -x86_64 xcode-select --install || echo "Xcode Command Line Tools already installed"
-
       - name: Install Homebrew
         run: |
-          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" -- --prefix=/usr/local
+          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
       - name: Update PATH for Homebrew
         run: |
