@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-    
+
     steps:
     - uses: actions/checkout@v3
 
@@ -30,36 +30,51 @@ jobs:
           gstreamer \
           gettext
 
+    - name: Setup environment
+      run: |
+        echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
+        echo "PATH=/usr/local/opt/bison/bin:$PATH" >> $GITHUB_ENV
+        echo "HOMEBREW_PREFIX=/usr/local/Homebrew" >> $GITHUB_ENV
+        echo "Current PATH: $PATH"
+        which bison
+        bison --version
+
     - name: Clone Wine repository
       run: |
         git clone https://github.com/wine-mirror/wine.git
         cd wine
 
+    - name: Create build directory
+      run: |
+        mkdir -p wine/config
+        mkdir -p wine/build
+
     - name: Configure Wine
       run: |
-        cd wine
-        mkdir build
-        cd build
+        cd wine/config
         arch -x86_64 ../configure \
-          --prefix="${GITHUB_WORKSPACE}/wine-dist" \
+          --prefix="${GITHUB_WORKSPACE}/wine/build" \
           --enable-win64 \
           CFLAGS="-O2" \
           CXXFLAGS="-O2"
+      env:
+        PATH: /usr/local/opt/bison/bin:/usr/local/bin:${{ env.PATH }}
+        HOMEBREW_PREFIX: /usr/local/Homebrew
 
     - name: Build Wine
       run: |
-        cd wine/build
+        cd wine/config
         arch -x86_64 make -j$(sysctl -n hw.ncpu)
 
     - name: Install Wine
       run: |
-        cd wine/build
+        cd wine/config
         make install
 
     - name: Create artifact
       run: |
         cd "${GITHUB_WORKSPACE}"
-        tar czf wine-macos-x64.tar.gz wine-dist/
+        tar czf wine-macos-x64.tar.gz wine/build/
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v3
@@ -93,5 +108,5 @@ jobs:
 
     - name: Test Wine Installation
       run: |
-        cd "${GITHUB_WORKSPACE}/wine-dist/bin"
+        cd "${GITHUB_WORKSPACE}/wine/build/bin"
         ./wine --version
