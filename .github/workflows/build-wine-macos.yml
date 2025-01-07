@@ -14,41 +14,49 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install and verify bison
+    - name: Setup x86_64 Homebrew
       run: |
-        brew uninstall bison || true
-        brew install bison
-        echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
-        bison --version
-
-    - name: Install other dependencies
-      run: |
+        sudo mkdir -p /usr/local/bin
+        sudo mkdir -p /usr/local/Homebrew
+        cd /usr/local
+        sudo git clone https://github.com/Homebrew/brew Homebrew
+        sudo chown -R $(whoami) /usr/local/Homebrew
+        eval "$(/usr/local/Homebrew/bin/brew shellenv)"
         brew update
-        brew install \
+
+    - name: Install base dependencies
+      run: |
+        arch -x86_64 /usr/local/Homebrew/bin/brew install \
+          bison \
           flex \
           gcc \
           mingw-w64 \
           pkgconfig \
           gnutls \
-          freetype \
           libpng \
           libxslt \
           gstreamer \
-          gettext
+          gettext \
+          freetype
 
     - name: Setup environment
       run: |
-        echo "HOMEBREW_PREFIX=$(brew --prefix)" >> $GITHUB_ENV
-        echo "BISON_PATH=$(brew --prefix bison)/bin" >> $GITHUB_ENV
-        echo "LDFLAGS=-L$(brew --prefix bison)/lib" >> $GITHUB_ENV
-        echo "CPPFLAGS=-I$(brew --prefix bison)/include" >> $GITHUB_ENV
+        echo "PATH=/usr/local/bin:/usr/local/opt/bison/bin:/usr/local/opt/freetype/bin:$PATH" >> $GITHUB_ENV
+        echo "HOMEBREW_PREFIX=/usr/local" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=/usr/local/opt/freetype/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        echo "LDFLAGS=-L/usr/local/opt/bison/lib -L/usr/local/opt/freetype/lib $LDFLAGS" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I/usr/local/opt/bison/include -I/usr/local/opt/freetype/include/freetype2 $CPPFLAGS" >> $GITHUB_ENV
+        echo "FREETYPE_CFLAGS=-I/usr/local/opt/freetype/include/freetype2" >> $GITHUB_ENV
+        echo "FREETYPE_LIBS=-L/usr/local/opt/freetype/lib -lfreetype" >> $GITHUB_ENV
 
-    - name: Verify PATH and bison
+    - name: Verify installations
       run: |
         echo "Current PATH: $PATH"
         which bison
         bison --version
-        echo "Bison location: $(brew --prefix bison)/bin/bison"
+        pkg-config --modversion freetype2
+        ls -la /usr/local/opt/freetype/lib/
+        ls -la /usr/local/opt/freetype/include/freetype2
 
     - name: Clone Wine repository
       run: |
@@ -63,12 +71,18 @@ jobs:
     - name: Configure Wine
       run: |
         cd wine/config
-        PATH="$(brew --prefix bison)/bin:$PATH" arch -x86_64 ../configure \
+        PATH="/usr/local/opt/bison/bin:/usr/local/bin:$PATH" \
+        PKG_CONFIG_PATH="/usr/local/opt/freetype/lib/pkgconfig:$PKG_CONFIG_PATH" \
+        FREETYPE_CFLAGS="-I/usr/local/opt/freetype/include/freetype2" \
+        FREETYPE_LIBS="-L/usr/local/opt/freetype/lib -lfreetype" \
+        arch -x86_64 ../configure \
           --prefix="${GITHUB_WORKSPACE}/wine/build" \
           --enable-win64 \
-          CFLAGS="-O2" \
+          --with-freetype \
+          CFLAGS="-O2 -I/usr/local/opt/freetype/include/freetype2" \
           CXXFLAGS="-O2" \
-          YACC="$(brew --prefix bison)/bin/bison"
+          LDFLAGS="-L/usr/local/opt/freetype/lib" \
+          YACC="/usr/local/opt/bison/bin/bison"
 
     - name: Build Wine
       run: |
