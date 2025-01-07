@@ -26,7 +26,6 @@ jobs:
 
     - name: Install and verify bison
       run: |
-        arch -x86_64 /usr/local/Homebrew/bin/brew uninstall bison || true
         arch -x86_64 /usr/local/Homebrew/bin/brew install bison
         echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
         /usr/local/opt/bison/bin/bison --version
