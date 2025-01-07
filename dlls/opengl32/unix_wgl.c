@@ -80,6 +80,12 @@ struct opengl_context
     GLuint *disabled_exts;       /* indices of disabled extensions */
     struct wgl_context *drv_ctx; /* driver context */
     GLubyte *version_string;
+    
+#ifdef __APPLE__
+    LONG last_error;
+    struct gl_resources *resources;
+    void *pending_mapped;
+#endif
 };
 
 struct wgl_handle
