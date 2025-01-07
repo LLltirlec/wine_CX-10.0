@@ -4497,23 +4497,23 @@ PIMAGE_NT_HEADERS WINAPI RtlImageNtHeader(HMODULE hModule)
  *
  * Trigger a debug breakpoint if the process is being debugged.
  */
-static void process_breakpoint(void)
-{
-    DWORD_PTR port = 0;
+// static void process_breakpoint(void)
+// {
+//     DWORD_PTR port = 0;
 
-    NtQueryInformationProcess( GetCurrentProcess(), ProcessDebugPort, &port, sizeof(port), NULL );
-    if (!port) return;
+//     NtQueryInformationProcess( GetCurrentProcess(), ProcessDebugPort, &port, sizeof(port), NULL );
+//     if (!port) return;
 
-    __TRY
-    {
-        DbgBreakPoint();
-    }
-    __EXCEPT_ALL
-    {
-        /* do nothing */
-    }
-    __ENDTRY
-}
+//     __TRY
+//     {
+//         DbgBreakPoint();
+//     }
+//     __EXCEPT_ALL
+//     {
+//         /* do nothing */
+//     }
+//     __ENDTRY
+// }
 
 
 /***********************************************************************
@@ -4781,8 +4781,8 @@ void loader_init( CONTEXT *context, void **entry )
 {
     static int attach_done;
     NTSTATUS status;
-    // ULONG_PTR cookie, port = 0;
-    ULONG_PTR cookie; // From Wine CX
+    ULONG_PTR cookie, port = 0;
+    // ULONG_PTR cookie; // From Wine CX
     WINE_MODREF *wm;
 
     if (process_detaching) NtTerminateThread( GetCurrentThread(), 0 );
@@ -4924,9 +4924,9 @@ void loader_init( CONTEXT *context, void **entry )
         if (wm->ldr.TlsIndex == -1) call_tls_callbacks( wm->ldr.DllBase, DLL_PROCESS_ATTACH );
         if (wm->ldr.ActivationContext) RtlDeactivateActivationContext( 0, cookie );
 
-        // NtQueryInformationProcess( GetCurrentProcess(), ProcessDebugPort, &port, sizeof(port), NULL );
-        // if (port) process_breakpoint();
-        process_breakpoint();
+        NtQueryInformationProcess( GetCurrentProcess(), ProcessDebugPort, &port, sizeof(port), NULL );
+        if (port) process_breakpoint();
+        // process_breakpoint();
     }
     else
     {
