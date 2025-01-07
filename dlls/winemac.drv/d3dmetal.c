@@ -48,7 +48,10 @@ struct macdrv_functions_t
     macdrv_metal_layer (*macdrv_view_get_metal_layer)(macdrv_metal_view v);
     void (*macdrv_view_release_metal_view)(macdrv_metal_view v);
     void (*on_main_thread)(dispatch_block_t b);
-    NTSTATUS (*KeUserDispatchCallback)(const struct dispatch_callback_params *params, ULONG len, void **ret_ptr, ULONG *ret_len);
+    LSTATUS(WINAPI*RegQueryValueExA)(HKEY, LPCSTR, LPDWORD, LPDWORD, BYTE*, LPDWORD);
+    LSTATUS(WINAPI*RegSetValueExA)(HKEY, LPCSTR, DWORD, DWORD, const BYTE*, DWORD);
+    LSTATUS(WINAPI*RegOpenKeyExA)(HKEY, LPCSTR, DWORD, DWORD, HKEY*);
+    LSTATUS(WINAPI*RegCreateKeyExA)(HKEY, LPCSTR, DWORD, LPSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, HKEY*, LPDWORD);
     LSTATUS(WINAPI*RegCloseKey)(HKEY);
     BOOL(WINAPI*EnumDisplayMonitors)(HDC,LPRECT,MONITORENUMPROC,LPARAM);
     BOOL(WINAPI*GetMonitorInfoA)(HMONITOR,LPMONITORINFO);
@@ -60,6 +63,8 @@ struct macdrv_functions_t
     INT(WINAPI*GetSystemMetrics)(INT);
     LONG_PTR(WINAPI*SetWindowLongPtrW)(HWND,INT,LONG_PTR);
 };
+C_ASSERT(sizeof(struct macdrv_functions_t) == 192);
+C_ASSERT(sizeof(struct macdrv_win_data) == 120);
 
 void OnMainThread(dispatch_block_t block);
 
@@ -123,9 +128,8 @@ static void my_OnMainThread(dispatch_block_t b)
     OnMainThread(b);
 }
 
-static NTSTATUS my_RegQueryValueExA(HKEY p1, LPCSTR p2, LPDWORD p3, LPDWORD p4, BYTE* p5, LPDWORD p6)
+static LSTATUS WINAPI my_RegQueryValueExA(HKEY p1, LPCSTR p2, LPDWORD p3, LPDWORD p4, BYTE* p5, LPDWORD p6)
 {
-    NTSTATUS status;
     struct regqueryvalueexa_params params =
     {
         .dispatch = {.callback = regqueryvalueexa_callback},
@@ -141,15 +145,13 @@ static NTSTATUS my_RegQueryValueExA(HKEY p1, LPCSTR p2, LPDWORD p3, LPDWORD p4, 
 
     TRACE("RegQueryValueExA %p %s %p %p %p %p\n", p1, p2, p3, p4, p5, p6);
 
-    status = macdrv_functions.KeUserDispatchCallback(&params.dispatch, sizeof(params), &ret_ptr, &ret_len);
-    if (status == STATUS_SUCCESS && ret_len == sizeof(LSTATUS))
-        return *(LSTATUS *)ret_ptr;
-    return status;
+    KeUserDispatchCallback(&params.dispatch, sizeof(params), &ret_ptr, &ret_len);
+
+    return params.result;
 }
 
-static NTSTATUS my_RegSetValueExA(HKEY p1, LPCSTR p2, DWORD p3, DWORD p4, const BYTE* p5, DWORD p6)
+static LSTATUS WINAPI my_RegSetValueExA(HKEY p1, LPCSTR p2, DWORD p3, DWORD p4, const BYTE* p5, DWORD p6)
 {
-    NTSTATUS status;
     struct regsetvalueexa_params params =
     {
         .dispatch = {.callback = regsetvalueexa_callback},
@@ -165,15 +167,13 @@ static NTSTATUS my_RegSetValueExA(HKEY p1, LPCSTR p2, DWORD p3, DWORD p4, const 
 
     TRACE("RegSetValueExA %p %s(%p) %d %p %d\n", p1, p2, p2, p4, p5, p6);
 
-    status = macdrv_functions.KeUserDispatchCallback(&params.dispatch, sizeof(params), &ret_ptr, &ret_len);
-    if (status == STATUS_SUCCESS && ret_len == sizeof(LSTATUS))
-        return *(LSTATUS *)ret_ptr;
-    return status;
+    KeUserDispatchCallback(&params.dispatch, sizeof(params), &ret_ptr, &ret_len);
+
+    return params.result;
 }
 
-static NTSTATUS my_RegOpenKeyExA(HKEY p1, LPCSTR p2, DWORD p3, DWORD p4, HKEY* p5)
+static LSTATUS WINAPI my_RegOpenKeyExA(HKEY p1, LPCSTR p2, DWORD p3, DWORD p4, HKEY* p5)
 {
-    NTSTATUS status;
     struct regcreateopenkeyexa_params params =
     {
         .dispatch = {.callback = regcreateopenkeyexa_callback},
@@ -189,15 +189,13 @@ static NTSTATUS my_RegOpenKeyExA(HKEY p1, LPCSTR p2, DWORD p3, DWORD p4, HKEY* p
 
     TRACE("RegOpenKeyExA %p %s\n", p1, p2);
 
-    status = macdrv_functions.KeUserDispatchCallback(&params.dispatch, sizeof(params), &ret_ptr, &ret_len);
-    if (status == STATUS_SUCCESS && ret_len == sizeof(LSTATUS))
-        return *(LSTATUS *)ret_ptr;
-    return status;
+    KeUserDispatchCallback(&params.dispatch, sizeof(params), &ret_ptr, &ret_len);
+
+    return params.result;
 }
 
-static NTSTATUS my_RegCreateKeyExA(HKEY p1, LPCSTR p2, DWORD p3, LPSTR p4, DWORD p5, DWORD p6, LPSECURITY_ATTRIBUTES p7, HKEY* p8, LPDWORD p9)
+static LSTATUS WINAPI my_RegCreateKeyExA(HKEY p1, LPCSTR p2, DWORD p3, LPSTR p4, DWORD p5, DWORD p6, LPSECURITY_ATTRIBUTES p7, HKEY* p8, LPDWORD p9)
 {
-    NTSTATUS status;
     struct regcreateopenkeyexa_params params =
     {
         .dispatch = {.callback = regcreateopenkeyexa_callback},
@@ -217,10 +215,16 @@ static NTSTATUS my_RegCreateKeyExA(HKEY p1, LPCSTR p2, DWORD p3, LPSTR p4, DWORD
 
     TRACE("RegCreateKeyExA %p %s\n", p1, p2);
 
-    status = macdrv_functions.KeUserDispatchCallback(&params.dispatch, sizeof(params), &ret_ptr, &ret_len);
-    if (status == STATUS_SUCCESS && ret_len == sizeof(LSTATUS))
-        return *(LSTATUS *)ret_ptr;
-    return status;
+    KeUserDispatchCallback(&params.dispatch, sizeof(params), &ret_ptr, &ret_len);
+
+    return params.result;
+}
+
+static LSTATUS WINAPI DECLSPEC_HOTPATCH RegCloseKey( HKEY hkey )
+{
+    if (!hkey) return ERROR_INVALID_HANDLE;
+    if (hkey >= (HKEY)0x80000000) return ERROR_SUCCESS;
+    return RtlNtStatusToDosError( NtClose( hkey ) );
 }
 
 static LSTATUS WINAPI my_RegCloseKey(HKEY hkey)
@@ -272,10 +276,10 @@ static LONG_PTR WINAPI my_GetWindowLongPtrW(HWND h,int nIndex)
     return NtUserGetWindowLongPtrW(h, nIndex);
 }
 
-static BOOL WINAPI my_GetWindowRect(HWND h, LPRECT rect)
+static BOOL WINAPI my_GetWindowRect(HWND hwnd, LPRECT rect)
 {
-    TRACE("GetWindowRect %p %p\n", h, rect);
-    return NtUserGetWindowRect(h, rect);
+    TRACE("GetWindowRect %p %p\n", hwnd, rect);
+    return NtUserGetWindowRect(hwnd, rect, 0);
 }
 
 static BOOL WINAPI my_MoveWindow(HWND h, int X,int Y,int nWidth,int nHeight,BOOL bRepaint)
@@ -315,7 +319,10 @@ DECLSPEC_EXPORT struct macdrv_functions_t macdrv_functions =
     &my_macdrv_view_get_metal_layer,
     &my_macdrv_view_release_metal_view,
     &my_OnMainThread,
-    &KeUserDispatchCallback,
+    &my_RegQueryValueExA,
+    &my_RegSetValueExA,
+    &my_RegOpenKeyExA,
+    &my_RegCreateKeyExA,
     &my_RegCloseKey,
     &my_EnumDisplayMonitors,
     &my_GetMonitorInfoA,

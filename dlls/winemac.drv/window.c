@@ -1418,6 +1418,27 @@ void macdrv_SetDesktopWindow(HWND hwnd)
     set_app_icon();
 }
 
+void macdrv_resize_desktop(void)
+{
+    HWND hwnd = NtUserGetDesktopWindow();
+    CGRect new_desktop_rect;
+    RECT current_desktop_rect;
+
+    macdrv_reset_device_metrics();
+    new_desktop_rect = macdrv_get_desktop_rect();
+    if (!NtUserGetWindowRect(hwnd, &current_desktop_rect) ||
+        !CGRectEqualToRect(cgrect_from_rect(current_desktop_rect), new_desktop_rect))
+    {
+        send_message_timeout(HWND_BROADCAST, WM_MACDRV_RESET_DEVICE_METRICS, 0, 0,
+                             SMTO_ABORTIFHUNG, 2000, NULL);
+        NtUserSetWindowPos(hwnd, 0, CGRectGetMinX(new_desktop_rect), CGRectGetMinY(new_desktop_rect),
+                           CGRectGetWidth(new_desktop_rect), CGRectGetHeight(new_desktop_rect),
+                           SWP_NOZORDER | SWP_NOACTIVATE | SWP_DEFERERASE);
+        send_message_timeout(HWND_BROADCAST, WM_MACDRV_DISPLAYCHANGE, 0, 0,
+                             SMTO_ABORTIFHUNG, 2000, NULL);
+    }
+}
+
 #define WM_WINE_NOTIFY_ACTIVITY WM_USER
 
 LRESULT macdrv_DesktopWindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
@@ -1436,6 +1457,10 @@ LRESULT macdrv_DesktopWindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
         UpdateSystemActivity(UsrActivity);
 #pragma clang diagnostic pop
+        break;
+    }
+    case WM_DISPLAYCHANGE:
+        macdrv_resize_desktop();
         break;
     }
     }

@@ -1100,7 +1100,11 @@ void macdrv_displays_changed(const macdrv_event *event)
        process it (by sending it to the desktop window). */
     if (event->displays_changed.activating ||
         NtUserGetWindowThread(hwnd, NULL) == GetCurrentThreadId())
-        NtUserCallNoParam(NtUserCallNoParam_DisplayModeChanged);
+        {
+            macdrv_init_display_devices(TRUE);
+            macdrv_resize_desktop();
+            NtUserCallNoParam(NtUserCallNoParam_DisplayModeChanged);
+        }
 }
 
 UINT macdrv_UpdateDisplayDevices(const struct gdi_device_manager *device_manager, void *param)
@@ -1189,4 +1193,18 @@ UINT macdrv_UpdateDisplayDevices(const struct gdi_device_manager *device_manager
     macdrv_free_gpus(gpus);
     macdrv_free_displays(displays);
     return STATUS_SUCCESS;
+}
+
+/***********************************************************************
+ *              macdrv_init_display_devices
+ *
+ * Initialize display device registry data.
+ */
+void macdrv_init_display_devices(BOOL force)
+{
+    UINT32 num_path, num_mode;
+
+    if (force) force_display_devices_refresh = TRUE;
+    /* trigger refresh in win32u */
+    NtUserGetDisplayConfigBufferSizes( QDC_ONLY_ACTIVE_PATHS, &num_path, &num_mode );
 }
