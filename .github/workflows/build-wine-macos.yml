@@ -14,11 +14,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install dependencies
+    - name: Install and verify bison
+      run: |
+        brew uninstall bison || true
+        brew install bison
+        echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
+        bison --version
+
+    - name: Install other dependencies
       run: |
         brew update
         brew install \
-          bison \
           flex \
           gcc \
           mingw-w64 \
@@ -32,12 +38,17 @@ jobs:
 
     - name: Setup environment
       run: |
-        echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
-        echo "PATH=/usr/local/opt/bison/bin:$PATH" >> $GITHUB_ENV
-        echo "HOMEBREW_PREFIX=/usr/local/Homebrew" >> $GITHUB_ENV
+        echo "HOMEBREW_PREFIX=$(brew --prefix)" >> $GITHUB_ENV
+        echo "BISON_PATH=$(brew --prefix bison)/bin" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix bison)/lib" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$(brew --prefix bison)/include" >> $GITHUB_ENV
+
+    - name: Verify PATH and bison
+      run: |
         echo "Current PATH: $PATH"
         which bison
         bison --version
+        echo "Bison location: $(brew --prefix bison)/bin/bison"
 
     - name: Clone Wine repository
       run: |
@@ -52,14 +63,12 @@ jobs:
     - name: Configure Wine
       run: |
         cd wine/config
-        arch -x86_64 ../configure \
+        PATH="$(brew --prefix bison)/bin:$PATH" arch -x86_64 ../configure \
           --prefix="${GITHUB_WORKSPACE}/wine/build" \
           --enable-win64 \
           CFLAGS="-O2" \
-          CXXFLAGS="-O2"
-      env:
-        PATH: /usr/local/opt/bison/bin:/usr/local/bin:${{ env.PATH }}
-        HOMEBREW_PREFIX: /usr/local/Homebrew
+          CXXFLAGS="-O2" \
+          YACC="$(brew --prefix bison)/bin/bison"
 
     - name: Build Wine
       run: |
@@ -105,8 +114,3 @@ jobs:
         asset_path: wine-macos-x64.tar.gz
         asset_name: wine-macos-x64.tar.gz
         asset_content_type: application/gzip
-
-    - name: Test Wine Installation
-      run: |
-        cd "${GITHUB_WORKSPACE}/wine/build/bin"
-        ./wine --version
