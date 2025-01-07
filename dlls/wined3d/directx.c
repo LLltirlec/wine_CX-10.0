@@ -1784,6 +1784,42 @@ HRESULT CDECL wined3d_adapter_get_identifier(const struct wined3d_adapter *adapt
 
     wined3d_mutex_unlock();
 
+    {
+        WCHAR name[MAX_PATH], *module_exe;
+        if (GetModuleFileNameW(NULL, name, sizeof(name)))
+        {
+            module_exe = wcsrchr(name, '\\');
+            module_exe = module_exe ? module_exe + 1 : name;
+
+            /* CW HACK 19356 */
+            if (!lstrcmpW(module_exe, L"GTAIV.exe"))
+            {
+                /* GTA IV hangs on launch trying to init nvapi if it sees an NVIDIA GPU */
+                if (identifier->vendor_id == HW_VENDOR_NVIDIA)
+                {
+                    identifier->vendor_id = HW_VENDOR_AMD;
+                    identifier->device_id = CARD_AMD_RADEON_RX_480;
+                }
+
+                /* GTA IV ends up using its "Intel integrated" codepath for determining
+                 * VRAM size (since nvapi/atiadlxx fail), but this requires that
+                 * DedicatedVideoMemory is a very small dummy value, and SharedSystemMemory
+                 * is the actual VRAM size.
+                 * Swap the memory values around so this works.
+                 */
+                identifier->shared_system_memory = identifier->video_memory;
+                identifier->video_memory = 32 * 1024 * 1024;
+            }
+
+            /* CW HACK 19355: GTA 5 crashes on launch trying to init nvapi if it sees an NVIDIA GPU */
+            if (!lstrcmpW(module_exe, L"GTA5.exe") && (identifier->vendor_id == HW_VENDOR_NVIDIA))
+            {
+                    identifier->vendor_id = HW_VENDOR_AMD;
+                    identifier->device_id = CARD_AMD_RADEON_RX_480;
+            }
+        }
+    }
+
     return WINED3D_OK;
 }
 

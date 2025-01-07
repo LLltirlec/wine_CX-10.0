@@ -1569,6 +1569,11 @@ static NTSTATUS get_image_machine( HANDLE handle, USHORT *machine )
     FILE_POSITION_INFORMATION pos_info;
     NTSTATUS status;
 
+    /* HACK: this shouldn't be necessary since we open the file for synchronous
+     * I/O, but we currently ignore that in ntdll.so and always write the 32-bit
+     * IOSB */
+    iosb.Pointer = &iosb32;
+
     offset.QuadPart = 0;
     status = NtReadFile( handle, NULL, NULL, NULL,
                          &iosb, &dos_hdr, sizeof(dos_hdr), &offset, NULL );

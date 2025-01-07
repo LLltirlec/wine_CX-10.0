@@ -85,6 +85,47 @@ static struct macdrv_window_features get_window_features_for_style(DWORD style, 
     return wf;
 }
 
+/* CrossOver Hack #16933 and #23971 */
+static BOOL is_main_quicken_window(HWND hwnd)
+{
+    static const WCHAR qw_exeW[] = {'q','w','.','e','x','e',0};
+    static const WCHAR qframeW[] = {'Q','F','R','A','M','E',0};
+    static int is_qw_exe = -1;
+    WCHAR class[32];
+    UNICODE_STRING name = { .Buffer = class, .MaximumLength = sizeof(class) };
+
+    if (is_qw_exe == -1)
+    {
+        WCHAR *name = NtCurrentTeb()->Peb->ProcessParameters->ImagePathName.Buffer;
+        WCHAR *module_exe = wcsrchr(name, '\\');
+        module_exe = module_exe ? module_exe + 1 : name;
+
+        is_qw_exe = !wcsicmp(module_exe, qw_exeW);
+    }
+
+    if (!is_qw_exe || !NtUserGetClassName(hwnd, FALSE, &name))
+        return FALSE;
+
+    return !wcscmp(class, qframeW);
+}
+
+static BOOL is_hoyoplay(void)
+{
+    static const WCHAR hoyoplayW[] = {'H','Y','P','.','e','x','e',0};
+    static int is_hoyoplay_exe = -1;
+    WCHAR *name, *module_exe;
+
+    if (is_hoyoplay_exe == -1)
+    {
+        name = NtCurrentTeb()->Peb->ProcessParameters->ImagePathName.Buffer;
+        module_exe = wcsrchr(name, '\\');
+        module_exe = module_exe ? module_exe + 1 : name;
+
+        is_hoyoplay_exe = !wcsicmp(module_exe, hoyoplayW);
+    }
+    return is_hoyoplay_exe;
+}
+
 /***********************************************************************
  *              get_cocoa_window_features
  */
@@ -1023,8 +1064,46 @@ static void set_app_icon(void)
     CFArrayRef images = create_app_icon_images();
     if (images)
     {
-        macdrv_set_application_icon(images);
+        macdrv_set_application_icon(images, NULL);
         CFRelease(images);
+    }
+    else /* CrossOver Hack 13440: Find an icon from the CrossOver app bundle */
+    {
+        const char *cx_root;
+        if ((cx_root = getenv("CX_ROOT")) && cx_root[0])
+        {
+            CFURLRef url, temp;
+            url = CFURLCreateFromFileSystemRepresentation(NULL, (UInt8*)cx_root, strlen(cx_root), TRUE);
+            if (url)
+            {
+                temp = CFURLCreateCopyDeletingLastPathComponent(NULL, url);
+                CFRelease(url);
+                url = temp;
+            }
+            if (url)
+            {
+                temp = CFURLCreateCopyDeletingLastPathComponent(NULL, url);
+                CFRelease(url);
+                url = temp;
+            }
+            if (url)
+            {
+                temp = CFURLCreateCopyAppendingPathComponent(NULL, url, CFSTR("Resources"), TRUE);
+                CFRelease(url);
+                url = temp;
+            }
+            if (url)
+            {
+                temp = CFURLCreateCopyAppendingPathComponent(NULL, url, CFSTR("exeIcon.icns"), FALSE);
+                CFRelease(url);
+                url = temp;
+            }
+            if (url)
+            {
+                macdrv_set_application_icon(NULL, url);
+                CFRelease(url);
+            }
+        }
     }
 }
 

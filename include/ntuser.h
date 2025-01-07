@@ -599,6 +599,13 @@ enum associate_input_context_result
     AICR_FAILED,
 };
 
+struct flush_shm_surface_params
+{
+    RECT bounds;
+    ULONG section;
+    ULONG hwnd;
+};
+
 /* internal messages codes */
 enum wine_internal_message
 {
@@ -614,6 +621,7 @@ enum wine_internal_message
     WM_WINE_IME_NOTIFY,
     WM_WINE_WINDOW_STATE_CHANGED,
     WM_WINE_UPDATEWINDOWSTATE,
+    WM_WINE_FLUSHSHMSURFACE,
     WM_WINE_FIRST_DRIVER_MSG = 0x80001000,  /* range of messages reserved for the USER driver */
     WM_WINE_CLIPCURSOR = 0x80001ff0, /* internal driver notification messages */
     WM_WINE_SETCURSOR,
@@ -1709,5 +1717,9 @@ static inline BOOL NtUserSetRawWindowPos( HWND hwnd, RECT rect, UINT flags, BOOL
     struct set_raw_window_pos_params params = {.rect = rect, .flags = flags, .internal = internal};
     return NtUserCallHwndParam( hwnd, (UINT_PTR)&params, NtUserCallHwndParam_SetRawWindowPos );
 }
+
+/* CW Hack 22310 */
+extern NTSTATUS WINAPI __wine_get_current_process_explicit_app_user_model_id( WCHAR *buffer, INT size );
+extern NTSTATUS WINAPI __wine_set_current_process_explicit_app_user_model_id( const WCHAR *aumid );
 
 #endif /* _NTUSER_ */

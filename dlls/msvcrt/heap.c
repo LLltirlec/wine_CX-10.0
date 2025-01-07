@@ -431,6 +431,23 @@ void* CDECL malloc(size_t size)
 {
     void *ret;
 
+  /* Hack for SAP GUI bug (bug 15831) */
+#if _MSVCR_VER == 110
+  static int is_sap = -1;
+
+  if (is_sap == -1 && MSVCRT_locale)
+  {
+    char name[MAX_PATH], *p;
+
+    GetModuleFileNameA(GetModuleHandleA(NULL), name, MAX_PATH);
+    p = strrchr(name,'\\');
+    p = (p ? p+1 : name);
+    is_sap = !strcasecmp(p, "saplogon.exe");
+  }
+
+  if (is_sap) size += 4;
+#endif
+
     do
     {
         ret = msvcrt_heap_alloc(0, size);

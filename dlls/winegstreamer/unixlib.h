@@ -219,6 +219,7 @@ struct wg_parser_create_params
 {
     wg_parser_t parser;
     UINT8 output_compressed;
+    UINT8 unlimited_buffering;
     UINT8 err_on;
     UINT8 warn_on;
 };

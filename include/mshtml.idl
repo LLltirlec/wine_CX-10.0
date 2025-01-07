@@ -30353,7 +30353,11 @@ interface IElementBehaviorFactory : IUnknown
 
 } /* library MSHTML */
 
+#ifdef MSHTML_MARSHALING_HACK
+#define IOleCommandTarget IUnknown
+#else
 interface IOleCommandTarget;
+#endif
 
 /*****************************************************************************
  *    IHTMLPrivateWindow interface
@@ -30361,7 +30365,7 @@ interface IOleCommandTarget;
 [
     object,
     uuid(3050f6dc-98b5-11cf-bb82-00aa00bdce0b),
-    local
+ /* local, CXHACK 15579 */
 ]
 interface IHTMLPrivateWindow : IUnknown
 {
@@ -30370,7 +30374,7 @@ interface IHTMLPrivateWindow : IUnknown
     HRESULT SetPICSTarget(IOleCommandTarget *cmdtrg);
     HRESULT PICSComplete(int arg);
     HRESULT FindWindowByName(LPCWSTR name, IHTMLWindow2 **ret);
-    HRESULT GetAddressBarUrl(BSTR *url);
+    HRESULT GetAddressBarUrl([out, retval] BSTR *url);
 }
 
 /*****************************************************************************

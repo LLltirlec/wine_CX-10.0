@@ -226,6 +226,7 @@ static BOOL wined3d_buffer_gl_create_buffer_object(struct wined3d_buffer_gl *buf
     binding = wined3d_buffer_gl_binding_from_bind_flags(gl_info, buffer_gl->b.resource.bind_flags);
     if (buffer_gl->b.resource.usage & WINED3DUSAGE_DYNAMIC)
     {
+        TRACE("Buffer has WINED3DUSAGE_DYNAMIC set.\n");
         usage = GL_STREAM_DRAW_ARB;
         coherent = false;
     }

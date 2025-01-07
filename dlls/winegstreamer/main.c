@@ -163,16 +163,17 @@ static HRESULT wg_media_type_to_mf(const struct wg_media_type *wg_media_type, IM
     return E_NOTIMPL;
 }
 
-wg_parser_t wg_parser_create(bool output_compressed)
+wg_parser_t wg_parser_create(bool output_compressed, bool unlimited_buffering)
 {
     struct wg_parser_create_params params =
     {
         .output_compressed = output_compressed,
+        .unlimited_buffering = unlimited_buffering,
         .err_on = ERR_ON(quartz),
         .warn_on = WARN_ON(quartz),
     };
 
-    TRACE("output_compressed %d.\n", output_compressed);
+    TRACE("output_compressed %d, unlimited_buffering %d.\n", output_compressed, unlimited_buffering);
 
     if (WINE_UNIX_CALL(unix_wg_parser_create, &params))
         return 0;

@@ -1239,6 +1239,7 @@ static NTSTATUS xmit_immediate(HANDLE hDevice, int fd, const char* ptr)
 
 NTSTATUS serial_DeviceIoControl( HANDLE device, HANDLE event, PIO_APC_ROUTINE apc, void *apc_user,
                                  IO_STATUS_BLOCK *io, UINT code, void *in_buffer,
+                                // client_ptr_t io, UINT code, void *in_buffer, // From WineCX_24.0.5
                                  UINT in_size, void *out_buffer, UINT out_size )
 {
     DWORD sz = 0, access = FILE_READ_DATA;
@@ -1249,6 +1250,8 @@ NTSTATUS serial_DeviceIoControl( HANDLE device, HANDLE event, PIO_APC_ROUTINE ap
 
     TRACE("%p %s %p %d %p %d %p\n",
           device, iocode2str(code), in_buffer, in_size, out_buffer, out_size, io);
+    // TRACE("%p %s %p %d %p %d\n", // From WineCX_24.0.5
+    //       device, iocode2str(code), in_buffer, in_size, out_buffer, out_size); // From WineCX_24.0.5
 
     switch (code)
     {

@@ -837,7 +837,8 @@ static BOOL is_icmp_over_dgram( int fd )
 #endif
 }
 
-static NTSTATUS sock_recv( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc_user, IO_STATUS_BLOCK *io,
+// static NTSTATUS sock_recv( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc_user, IO_STATUS_BLOCK *io,
+static NTSTATUS sock_recv( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc_user, client_ptr_t io, // From WineCX_24.0.5
                            int fd, struct async_recv_ioctl *async, int force_async )
 {
     HANDLE wait_handle;
@@ -857,7 +858,8 @@ static NTSTATUS sock_recv( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, voi
     SERVER_START_REQ( recv_socket )
     {
         req->force_async = force_async;
-        req->async  = server_async( handle, &async->io, event, apc, apc_user, iosb_client_ptr(io) );
+        // req->async  = server_async( handle, &async->io, event, apc, apc_user, iosb_client_ptr(io) );
+        req->async  = server_async( handle, &async->io, event, apc, apc_user, io ); // From WineCX_24.0.5
         req->oob    = !!(async->unix_flags & MSG_OOB);
         status = wine_server_call( req );
         wait_handle = wine_server_ptr_handle( reply->wait );
@@ -941,7 +943,8 @@ static NTSTATUS sock_ioctl_recv( HANDLE handle, HANDLE event, PIO_APC_ROUTINE ap
 
 
 NTSTATUS sock_read( HANDLE handle, int fd, HANDLE event, PIO_APC_ROUTINE apc,
-                    void *apc_user, IO_STATUS_BLOCK *io, void *buffer, ULONG length )
+                    // void *apc_user, IO_STATUS_BLOCK *io, void *buffer, ULONG length )
+                    void *apc_user, client_ptr_t io, void *buffer, ULONG length ) // From WineCX_24.0.5
 {
     static const DWORD async_size = offsetof( struct async_recv_ioctl, iov[1] );
     struct async_recv_ioctl *async;
@@ -1105,7 +1108,8 @@ static void sock_save_icmp_id( struct async_send_ioctl *async )
 }
 
 static NTSTATUS sock_send( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc_user,
-                           IO_STATUS_BLOCK *io, int fd, struct async_send_ioctl *async, unsigned int server_flags )
+                        //    IO_STATUS_BLOCK *io, int fd, struct async_send_ioctl *async, unsigned int server_flags )
+                        client_ptr_t io, int fd, struct async_send_ioctl *async, unsigned int server_flags ) // From WineCX_24.0.5
 {
     HANDLE wait_handle;
     BOOL nonblocking;
@@ -1115,7 +1119,8 @@ static NTSTATUS sock_send( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, voi
     SERVER_START_REQ( send_socket )
     {
         req->flags = server_flags;
-        req->async  = server_async( handle, &async->io, event, apc, apc_user, iosb_client_ptr(io) );
+        // req->async  = server_async( handle, &async->io, event, apc, apc_user, iosb_client_ptr(io) );
+        req->async  = server_async( handle, &async->io, event, apc, apc_user, io ); // From WineCX_24.0.5
         status = wine_server_call( req );
         wait_handle = wine_server_ptr_handle( reply->wait );
         options     = reply->options;
@@ -1212,7 +1217,8 @@ static NTSTATUS sock_send( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, voi
 }
 
 static NTSTATUS sock_ioctl_send( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc_user,
-                                 IO_STATUS_BLOCK *io, int fd, const void *buffers_ptr, unsigned int count,
+                                //  IO_STATUS_BLOCK *io, int fd, const void *buffers_ptr, unsigned int count,
+                                 client_ptr_t io, int fd, const void *buffers_ptr, unsigned int count, // From WineCX_24.0.5
                                  const struct WS_sockaddr *addr, unsigned int addr_len, int unix_flags, int force_async )
 {
     struct async_send_ioctl *async;
@@ -1257,7 +1263,8 @@ static NTSTATUS sock_ioctl_send( HANDLE handle, HANDLE event, PIO_APC_ROUTINE ap
 
 
 NTSTATUS sock_write( HANDLE handle, int fd, HANDLE event, PIO_APC_ROUTINE apc,
-                     void *apc_user, IO_STATUS_BLOCK *io, const void *buffer, ULONG length )
+                    //  void *apc_user, IO_STATUS_BLOCK *io, const void *buffer, ULONG length )
+                     void *apc_user, client_ptr_t io, const void *buffer, ULONG length ) // From WineCX_24.0.5
 {
     static const DWORD async_size = offsetof( struct async_send_ioctl, iov[1] );
     struct async_send_ioctl *async;
@@ -1386,7 +1393,8 @@ static BOOL async_transmit_proc( void *user, ULONG_PTR *info, unsigned int *stat
 }
 
 static NTSTATUS sock_transmit( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc_user,
-                               IO_STATUS_BLOCK *io, int fd, const struct afd_transmit_params *params )
+                            //    IO_STATUS_BLOCK *io, int fd, const struct afd_transmit_params *params )
+                               client_ptr_t io, int fd, const struct afd_transmit_params *params ) // From WineCX_24.0.5
 {
     int file_fd, file_needs_close = FALSE;
     struct async_transmit_ioctl *async;
@@ -1440,7 +1448,8 @@ static NTSTATUS sock_transmit( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc,
     SERVER_START_REQ( send_socket )
     {
         req->flags = SERVER_SOCKET_IO_FORCE_ASYNC;
-        req->async  = server_async( handle, &async->io, event, apc, apc_user, iosb_client_ptr(io) );
+        // req->async  = server_async( handle, &async->io, event, apc, apc_user, iosb_client_ptr(io) );
+        req->async  = server_async( handle, &async->io, event, apc, apc_user, io ); // From WineCX_24.0.5
         status = wine_server_call( req );
         wait_handle = wine_server_ptr_handle( reply->wait );
         options     = reply->options;
@@ -1478,7 +1487,8 @@ static NTSTATUS sock_transmit( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc,
 }
 
 
-static NTSTATUS do_getsockopt( HANDLE handle, IO_STATUS_BLOCK *io, int level,
+// static NTSTATUS do_getsockopt( HANDLE handle, IO_STATUS_BLOCK *io, int level,
+static NTSTATUS do_getsockopt( HANDLE handle, client_ptr_t io, int level, // From WineCX_24.0.5
                                int option, void *out_buffer, ULONG out_size )
 {
     int fd, needs_close = FALSE;
@@ -1501,7 +1511,8 @@ static NTSTATUS do_getsockopt( HANDLE handle, IO_STATUS_BLOCK *io, int level,
 }
 
 
-static NTSTATUS do_setsockopt( HANDLE handle, IO_STATUS_BLOCK *io, int level,
+// static NTSTATUS do_setsockopt( HANDLE handle, IO_STATUS_BLOCK *io, int level,
+static NTSTATUS do_setsockopt( HANDLE handle, client_ptr_t io, int level, // From WineCX_24.0.5
                                int option, const void *optval, socklen_t optlen )
 {
     int fd, needs_close = FALSE;
@@ -1514,7 +1525,8 @@ static NTSTATUS do_setsockopt( HANDLE handle, IO_STATUS_BLOCK *io, int level,
     ret = setsockopt( fd, level, option, optval, optlen );
     if (needs_close) close( fd );
     if (ret) return sock_errno_to_status( errno );
-    if (io) io->Status = STATUS_SUCCESS;
+    // if (io) io->Status = STATUS_SUCCESS;
+    if (io) set_async_iosb( io, STATUS_SUCCESS, 0 ); // From WineCX_24.0.5
     return STATUS_SUCCESS;
 }
 
@@ -1522,17 +1534,20 @@ static NTSTATUS do_setsockopt( HANDLE handle, IO_STATUS_BLOCK *io, int level,
 static int get_sock_type( HANDLE handle )
 {
     int sock_type;
-    if (do_getsockopt( handle, NULL, SOL_SOCKET, SO_TYPE, &sock_type, sizeof(sock_type) ) != STATUS_SUCCESS)
+    // if (do_getsockopt( handle, NULL, SOL_SOCKET, SO_TYPE, &sock_type, sizeof(sock_type) ) != STATUS_SUCCESS)
+    if (do_getsockopt( handle, 0, SOL_SOCKET, SO_TYPE, &sock_type, sizeof(sock_type) ) != STATUS_SUCCESS) // From WineCX_24.0.5
         return -1;
     return sock_type;
 }
 
 
-NTSTATUS sock_ioctl( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc_user, IO_STATUS_BLOCK *io,
+// NTSTATUS sock_ioctl( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc_user, IO_STATUS_BLOCK *io,
+NTSTATUS sock_ioctl( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc_user, client_ptr_t io, // From WineCX_24.0.5
                      UINT code, void *in_buffer, UINT in_size, void *out_buffer, UINT out_size )
 {
     int fd, needs_close = FALSE;
     unsigned int options;
+    ULONG_PTR information = 0;
     NTSTATUS status;
 
     TRACE( "handle %p, code %#x, in_buffer %p, in_size %u, out_buffer %p, out_size %u\n",
@@ -2014,7 +2029,8 @@ NTSTATUS sock_ioctl( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc
             {
                 ws_linger->l_onoff = unix_linger.l_onoff;
                 ws_linger->l_linger = unix_linger.l_linger;
-                io->Information = sizeof(*ws_linger);
+                // io->Information = sizeof(*ws_linger);
+                information = sizeof(*ws_linger); // From WineCX_24.0.5
             }
 
             status = ret ? sock_errno_to_status( errno ) : STATUS_SUCCESS;
@@ -2084,7 +2100,8 @@ NTSTATUS sock_ioctl( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc
             }
             else
             {
-                io->Information = len;
+                // io->Information = len;
+                information = len; // From WineCX_24.0.5
                 status = STATUS_SUCCESS;
             }
             break;
@@ -2301,7 +2318,8 @@ NTSTATUS sock_ioctl( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc
             }
             else
             {
-                io->Information = len;
+                // io->Information = len;
+                information = len; // From WineCX_24.0.5
                 status = STATUS_SUCCESS;
             }
             break;
@@ -2520,8 +2538,10 @@ NTSTATUS sock_ioctl( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, void *apc
             if (needs_close) close( fd );
             if (ret) return sock_errno_to_status( errno );
 
-            io->Information = offsetof( DEVICELIST, Device[unix_list->len] );
-            if (out_size < io->Information)
+            // io->Information = offsetof( DEVICELIST, Device[unix_list->len] );
+            // if (out_size < io->Information)
+            information = offsetof( DEVICELIST, Device[unix_list->len] );  // From WineCX_24.0.5
+            if (out_size < information) // From WineCX_24.0.5
                 return STATUS_BUFFER_TOO_SMALL;
 
             TRACE( "IRLMP_ENUMDEVICES: got %u devices:\n", unix_list->len );

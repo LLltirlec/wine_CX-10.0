@@ -892,7 +892,8 @@ static NTSTATUS gl_glGetDoublev( void *args )
     return STATUS_SUCCESS;
 }
 
-static NTSTATUS gl_glGetError( void *args )
+// static NTSTATUS gl_glGetError( void *args )
+NTSTATUS gl_glGetError( void *args ) // From WineCX
 {
     struct glGetError_params *params = args;
     const struct opengl_funcs *funcs = params->teb->glTable;
