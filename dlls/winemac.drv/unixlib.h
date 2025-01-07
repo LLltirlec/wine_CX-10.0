@@ -79,6 +79,7 @@ struct dnd_query_exited_params
 /* macdrv_regcreateopenkeyexa params */
 struct regcreateopenkeyexa_params
 {
+    struct dispatch_callback_params dispatch;
     UINT32 create;
     UINT32 hkey;
     UINT64 name;
@@ -95,6 +96,7 @@ struct regcreateopenkeyexa_params
 /* macdrv_regqueryvalueexa params */
 struct regqueryvalueexa_params
 {
+    struct dispatch_callback_params dispatch;
     UINT32 hkey;
     UINT64 name;
     UINT64 reserved;
@@ -107,6 +109,7 @@ struct regqueryvalueexa_params
 /* macdrv_regsetvalueexa params */
 struct regsetvalueexa_params
 {
+    struct dispatch_callback_params dispatch;
     UINT32 hkey;
     UINT64 name;
     UINT32 reserved;
