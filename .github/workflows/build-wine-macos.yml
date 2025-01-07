@@ -45,7 +45,7 @@ jobs:
 
       - name: Clone Wine repository
         run: |
-          git clone https://github.com/LLltirlec/wine_CX-10.0-rc4.git
+          git clone https://github.com/LLltirlec/wine_CX-10.0.git
           cd wine
 
       - name: Configure Wine
