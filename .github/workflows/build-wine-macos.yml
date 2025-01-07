@@ -14,25 +14,16 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Setup x86_64 Homebrew
-      run: |
-        sudo mkdir -p /usr/local/bin
-        sudo mkdir -p /usr/local/Homebrew
-        cd /usr/local
-        sudo git clone https://github.com/Homebrew/brew Homebrew
-        sudo chown -R $(whoami) /usr/local/Homebrew
-        eval "$(/usr/local/Homebrew/bin/brew shellenv)"
-        brew update
-
     - name: Install and verify bison
       run: |
-        arch -x86_64 /usr/local/Homebrew/bin/brew install bison
+        arch -x86_64 /usr/local/bin/brew install bison
         echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
-        /usr/local/opt/bison/bin/bison --version
+        bison --version
 
     - name: Install other dependencies
       run: |
-        arch -x86_64 /usr/local/Homebrew/bin/brew install \
+        brew update
+        brew install \
           flex \
           gcc \
           mingw-w64 \
@@ -46,16 +37,17 @@ jobs:
 
     - name: Setup environment
       run: |
-        echo "PATH=/usr/local/bin:/usr/local/opt/bison/bin:$PATH" >> $GITHUB_ENV
-        echo "HOMEBREW_PREFIX=/usr/local" >> $GITHUB_ENV
-        echo "LDFLAGS=-L/usr/local/opt/bison/lib" >> $GITHUB_ENV
-        echo "CPPFLAGS=-I/usr/local/opt/bison/include" >> $GITHUB_ENV
+        echo "HOMEBREW_PREFIX=$(brew --prefix)" >> $GITHUB_ENV
+        echo "BISON_PATH=$(brew --prefix bison)/bin" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix bison)/lib" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$(brew --prefix bison)/include" >> $GITHUB_ENV
 
     - name: Verify PATH and bison
       run: |
         echo "Current PATH: $PATH"
         which bison
-        /usr/local/opt/bison/bin/bison --version
+        bison --version
+        echo "Bison location: $(brew --prefix bison)/bin/bison"
 
     - name: Clone Wine repository
       run: |
@@ -70,13 +62,12 @@ jobs:
     - name: Configure Wine
       run: |
         cd wine/config
-        PATH="/usr/local/opt/bison/bin:/usr/local/bin:$PATH" \
-        arch -x86_64 ../configure \
+        PATH="$(brew --prefix bison)/bin:$PATH" arch -x86_64 ../configure \
           --prefix="${GITHUB_WORKSPACE}/wine/build" \
           --enable-win64 \
           CFLAGS="-O2" \
           CXXFLAGS="-O2" \
-          YACC="/usr/local/opt/bison/bin/bison"
+          YACC="$(brew --prefix bison)/bin/bison"
 
     - name: Build Wine
       run: |
