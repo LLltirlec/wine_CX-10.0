@@ -40,17 +40,14 @@ jobs:
             gettext
 
       - name: Verify bison installation
-        run: arch -x86_64 bison --version
+        run: |
+          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+          arch -x86_64 bison --version
 
       - name: Clone Wine repository
         run: |
-          git clone https://github.com/wine-mirror/wine.git
+          git clone https://github.com/LLltirlec/wine_CX-10.0-rc4.git
           cd wine
-
-      - name: Create build directory
-        run: |
-          mkdir -p wine/config
-          mkdir -p wine/build
 
       - name: Configure Wine
         run: |
