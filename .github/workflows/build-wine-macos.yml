@@ -16,7 +16,7 @@ jobs:
 
     - name: Install and verify bison
       run: |
-        arch -x86_64 /usr/local/bin/brew install bison
+        arch -x86_64 brew install bison
         echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
         bison --version
 
