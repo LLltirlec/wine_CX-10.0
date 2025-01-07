@@ -4781,8 +4781,8 @@ void loader_init( CONTEXT *context, void **entry )
 {
     static int attach_done;
     NTSTATUS status;
-    // ULONG_PTR cookie, port = 0;
-    ULONG_PTR cookie; // From Wine CX
+    ULONG_PTR cookie, port = 0;
+    // ULONG_PTR cookie; // From Wine CX
     WINE_MODREF *wm;
 
     if (process_detaching) NtTerminateThread( GetCurrentThread(), 0 );
