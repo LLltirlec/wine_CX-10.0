@@ -71,6 +71,14 @@ enum wgl_handle_type
     HANDLE_TYPE_MASK = 15 << 12,
 };
 
+#ifdef __APPLE__
+struct gl_resources
+{
+    CFMutableDictionaryRef mapped_buffers;
+    LONG refcount;
+};
+#endif
+
 struct opengl_context
 {
     DWORD tid;                   /* thread that the context is current in */
@@ -80,7 +88,7 @@ struct opengl_context
     GLuint *disabled_exts;       /* indices of disabled extensions */
     struct wgl_context *drv_ctx; /* driver context */
     GLubyte *version_string;
-    
+
 #ifdef __APPLE__
     LONG last_error;
     struct gl_resources *resources;
@@ -1564,6 +1572,13 @@ NTSTATUS wow64_wgl_wglDeleteContext( void *args )
         .oldContext = ULongToPtr(params32->oldContext),
     };
     NTSTATUS status;
+
+#ifdef __APPLE__
+    struct wgl_handle *ptr = get_handle_ptr(params.oldContext, HANDLE_CONTEXT);
+
+    if (ptr) free_mapped_buffers(ptr->u.context);
+#endif
+
     if (!(status = wgl_wglDeleteContext( &params ))) update_teb32_context( params.teb );
     params32->ret = params.ret;
     return status;
