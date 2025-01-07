@@ -10,56 +10,94 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-    
+
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install dependencies
+    - name: Setup x86_64 Homebrew
       run: |
+        sudo mkdir -p /usr/local/bin
+        sudo mkdir -p /usr/local/Homebrew
+        cd /usr/local
+        sudo git clone https://github.com/Homebrew/brew Homebrew
+        sudo chown -R $(whoami) /usr/local/Homebrew
+        eval "$(/usr/local/Homebrew/bin/brew shellenv)"
         brew update
-        brew install \
+
+    - name: Install base dependencies
+      run: |
+        arch -x86_64 /usr/local/Homebrew/bin/brew install \
           bison \
           flex \
           gcc \
           mingw-w64 \
           pkgconfig \
           gnutls \
-          freetype \
           libpng \
           libxslt \
           gstreamer \
-          gettext
+          gettext \
+          freetype
+
+    - name: Setup environment
+      run: |
+        echo "PATH=/usr/local/bin:/usr/local/opt/bison/bin:/usr/local/opt/freetype/bin:$PATH" >> $GITHUB_ENV
+        echo "HOMEBREW_PREFIX=/usr/local" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=/usr/local/opt/freetype/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        echo "LDFLAGS=-L/usr/local/opt/bison/lib -L/usr/local/opt/freetype/lib $LDFLAGS" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I/usr/local/opt/bison/include -I/usr/local/opt/freetype/include/freetype2 $CPPFLAGS" >> $GITHUB_ENV
+        echo "FREETYPE_CFLAGS=-I/usr/local/opt/freetype/include/freetype2" >> $GITHUB_ENV
+        echo "FREETYPE_LIBS=-L/usr/local/opt/freetype/lib -lfreetype" >> $GITHUB_ENV
+
+    - name: Verify installations
+      run: |
+        echo "Current PATH: $PATH"
+        which bison
+        bison --version
+        pkg-config --modversion freetype2
+        ls -la /usr/local/opt/freetype/lib/
+        ls -la /usr/local/opt/freetype/include/freetype2
 
     - name: Clone Wine repository
       run: |
         git clone https://github.com/wine-mirror/wine.git
         cd wine
 
+    - name: Create build directory
+      run: |
+        mkdir -p wine/config
+        mkdir -p wine/build
+
     - name: Configure Wine
       run: |
-        cd wine
-        mkdir build
-        cd build
+        cd wine/config
+        PATH="/usr/local/opt/bison/bin:/usr/local/bin:$PATH" \
+        PKG_CONFIG_PATH="/usr/local/opt/freetype/lib/pkgconfig:$PKG_CONFIG_PATH" \
+        FREETYPE_CFLAGS="-I/usr/local/opt/freetype/include/freetype2" \
+        FREETYPE_LIBS="-L/usr/local/opt/freetype/lib -lfreetype" \
         arch -x86_64 ../configure \
-          --prefix="${GITHUB_WORKSPACE}/wine-dist" \
+          --prefix="${GITHUB_WORKSPACE}/wine/build" \
           --enable-win64 \
-          CFLAGS="-O2" \
-          CXXFLAGS="-O2"
+          --with-freetype \
+          CFLAGS="-O2 -I/usr/local/opt/freetype/include/freetype2" \
+          CXXFLAGS="-O2" \
+          LDFLAGS="-L/usr/local/opt/freetype/lib" \
+          YACC="/usr/local/opt/bison/bin/bison"
 
     - name: Build Wine
       run: |
-        cd wine/build
+        cd wine/config
         arch -x86_64 make -j$(sysctl -n hw.ncpu)
 
     - name: Install Wine
       run: |
-        cd wine/build
+        cd wine/config
         make install
 
     - name: Create artifact
       run: |
         cd "${GITHUB_WORKSPACE}"
-        tar czf wine-macos-x64.tar.gz wine-dist/
+        tar czf wine-macos-x64.tar.gz wine/build/
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v3
@@ -90,8 +128,3 @@ jobs:
         asset_path: wine-macos-x64.tar.gz
         asset_name: wine-macos-x64.tar.gz
         asset_content_type: application/gzip
-
-    - name: Test Wine Installation
-      run: |
-        cd "${GITHUB_WORKSPACE}/wine-dist/bin"
-        ./wine --version
