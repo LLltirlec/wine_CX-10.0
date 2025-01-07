@@ -1,130 +1,101 @@
-name: Build Wine_CX for MacOS
+name: Build Wine for macOS
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
-  workflow_dispatch:
 
 jobs:
-  build:
+  build-wine:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-    - name: Setup x86_64 Homebrew
-      run: |
-        sudo mkdir -p /usr/local/bin
-        sudo mkdir -p /usr/local/Homebrew
-        cd /usr/local
-        sudo git clone https://github.com/Homebrew/brew Homebrew
-        sudo chown -R $(whoami) /usr/local/Homebrew
-        eval "$(/usr/local/Homebrew/bin/brew shellenv)"
-        brew update
+      - name: Install Homebrew
+        run: |
+          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-    - name: Install base dependencies
-      run: |
-        arch -x86_64 /usr/local/Homebrew/bin/brew install \
-          bison \
-          flex \
-          gcc \
-          mingw-w64 \
-          pkgconfig \
-          gnutls \
-          libpng \
-          libxslt \
-          gstreamer \
-          gettext \
-          freetype
+      - name: Update PATH for Homebrew
+        run: |
+          echo "/usr/local/bin" >> $GITHUB_PATH
+          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
 
-    - name: Setup environment
-      run: |
-        echo "PATH=/usr/local/bin:/usr/local/opt/bison/bin:/usr/local/opt/freetype/bin:$PATH" >> $GITHUB_ENV
-        echo "HOMEBREW_PREFIX=/usr/local" >> $GITHUB_ENV
-        echo "PKG_CONFIG_PATH=/usr/local/opt/freetype/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
-        echo "LDFLAGS=-L/usr/local/opt/bison/lib -L/usr/local/opt/freetype/lib $LDFLAGS" >> $GITHUB_ENV
-        echo "CPPFLAGS=-I/usr/local/opt/bison/include -I/usr/local/opt/freetype/include/freetype2 $CPPFLAGS" >> $GITHUB_ENV
-        echo "FREETYPE_CFLAGS=-I/usr/local/opt/freetype/include/freetype2" >> $GITHUB_ENV
-        echo "FREETYPE_LIBS=-L/usr/local/opt/freetype/lib -lfreetype" >> $GITHUB_ENV
+      - name: Install dependencies
+        run: |
+          arch -x86_64 brew update
+          arch -x86_64 brew install \
+            bison \
+            flex \
+            gcc \
+            mingw-w64 \
+            pkgconfig \
+            gnutls \
+            freetype \
+            libpng \
+            libxslt \
+            gettext
 
-    - name: Verify installations
-      run: |
-        echo "Current PATH: $PATH"
-        which bison
-        bison --version
-        pkg-config --modversion freetype2
-        ls -la /usr/local/opt/freetype/lib/
-        ls -la /usr/local/opt/freetype/include/freetype2
+      - name: Verify bison installation
+        run: |
+          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+          arch -x86_64 bison --version
 
-    - name: Clone Wine repository
-      run: |
-        git clone https://github.com/wine-mirror/wine.git
-        cd wine
+      - name: Clone Wine repository
+        run: |
+          git clone https://github.com/LLltirlec/wine_CX-10.0.git wine
+          cd wine
 
-    - name: Create build directory
-      run: |
-        mkdir -p wine/config
-        mkdir -p wine/build
+      - name: Configure Wine
+        run: |
+          cd wine/config
+          PATH="$(brew --prefix bison)/bin:$PATH" arch -x86_64 ../configure \
+            --prefix="${GITHUB_WORKSPACE}/wine/build" \
+            --enable-win64
 
-    - name: Configure Wine
-      run: |
-        cd wine/config
-        PATH="/usr/local/opt/bison/bin:/usr/local/bin:$PATH" \
-        PKG_CONFIG_PATH="/usr/local/opt/freetype/lib/pkgconfig:$PKG_CONFIG_PATH" \
-        FREETYPE_CFLAGS="-I/usr/local/opt/freetype/include/freetype2" \
-        FREETYPE_LIBS="-L/usr/local/opt/freetype/lib -lfreetype" \
-        arch -x86_64 ../configure \
-          --prefix="${GITHUB_WORKSPACE}/wine/build" \
-          --enable-win64 \
-          --with-freetype \
-          CFLAGS="-O2 -I/usr/local/opt/freetype/include/freetype2" \
-          CXXFLAGS="-O2" \
-          LDFLAGS="-L/usr/local/opt/freetype/lib" \
-          YACC="/usr/local/opt/bison/bin/bison"
+      - name: Build Wine
+        run: |
+          cd wine/config
+          arch -x86_64 make -j$(sysctl -n hw.ncpu)
 
-    - name: Build Wine
-      run: |
-        cd wine/config
-        arch -x86_64 make -j$(sysctl -n hw.ncpu)
+      - name: Install Wine
+        run: |
+          cd wine/config
+          make install
 
-    - name: Install Wine
-      run: |
-        cd wine/config
-        make install
+      - name: Create artifact
+        run: |
+          cd "${GITHUB_WORKSPACE}"
+          tar czf wine-macos-x64.tar.gz wine/build/
 
-    - name: Create artifact
-      run: |
-        cd "${GITHUB_WORKSPACE}"
-        tar czf wine-macos-x64.tar.gz wine/build/
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: wine-macos-x64
+          path: wine-macos-x64.tar.gz
+          retention-days: 7
 
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: wine-macos-x64
-        path: wine-macos-x64.tar.gz
-        retention-days: 7
+      - name: Create Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: wine-macos-${{ github.sha }}
+          release_name: Wine MacOS Build ${{ github.sha }}
+          draft: false
+          prerelease: false
 
-    - name: Create Release
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: wine-macos-${{ github.sha }}
-        release_name: Wine MacOS Build ${{ github.sha }}
-        draft: false
-        prerelease: false
-
-    - name: Upload Release Asset
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: wine-macos-x64.tar.gz
-        asset_name: wine-macos-x64.tar.gz
-        asset_content_type: application/gzip
+      - name: Upload Release Asset
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: wine-macos-x64.tar.gz
+          asset_name: wine-macos-x64.tar.gz
+          asset_content_type: application/gzip
