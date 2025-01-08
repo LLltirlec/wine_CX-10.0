@@ -3960,16 +3960,21 @@ VkCommandBuffer wined3d_context_vk_apply_draw_state(struct wined3d_context_vk *c
             || wined3d_context_is_graphics_state_dirty(&context_vk->c, STATE_SCISSORRECT)
             || wined3d_context_is_graphics_state_dirty(&context_vk->c, STATE_RASTERIZER))
     {
-        unsigned int viewport_count = (context_vk->vk_info->multiple_viewports ? WINED3D_MAX_VIEWPORTS : 1);
-        VkViewport viewports[WINED3D_MAX_VIEWPORTS];
-        VkRect2D scissors[WINED3D_MAX_VIEWPORTS];
+        // unsigned int viewport_count = (context_vk->vk_info->multiple_viewports ? WINED3D_MAX_VIEWPORTS : 1);
+        // VkViewport viewports[WINED3D_MAX_VIEWPORTS];
+        // VkRect2D scissors[WINED3D_MAX_VIEWPORTS];
+        key->vp_desc.viewportCount = (context_vk->vk_info->multiple_viewports ? WINED3D_MAX_VIEWPORTS : 1);
+        key->vp_desc.scissorCount = key->vp_desc.viewportCount;
         unsigned int i;
 
-        for (i = 0; i < viewport_count; ++i)
+        // for (i = 0; i < viewport_count; ++i)
+        for (i = 0; i < key->vp_desc.viewportCount; ++i)
         {
             const struct wined3d_viewport *src_viewport = &state->viewports[i];
-            VkViewport *viewport = &viewports[i];
-            VkRect2D *scissor = &scissors[i];
+            // VkViewport *viewport = &viewports[i];
+            // VkRect2D *scissor = &scissors[i];
+            VkViewport *viewport = &key->viewports[i];
+            VkRect2D *scissor = &key->scissors[i];
 
             if (i >= state->viewport_count)
             {
