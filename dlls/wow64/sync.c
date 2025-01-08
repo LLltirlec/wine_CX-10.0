@@ -1564,6 +1564,7 @@ static NTSTATUS get_image_machine( HANDLE handle, USHORT *machine )
 {
     IMAGE_DOS_HEADER dos_hdr;
     IMAGE_NT_HEADERS nt_hdr;
+    IO_STATUS_BLOCK32 iosb32;
     IO_STATUS_BLOCK iosb;
     LARGE_INTEGER offset;
     FILE_POSITION_INFORMATION pos_info;
