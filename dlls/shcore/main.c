@@ -27,7 +27,6 @@
 #include "winbase.h"
 #include "wingdi.h"
 #include "winuser.h"
-#include "ntuser.h"
 #include "initguid.h"
 #include "ocidl.h"
 #include "featurestagingapi.h"
