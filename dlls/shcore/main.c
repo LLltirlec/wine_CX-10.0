@@ -31,7 +31,7 @@
 #include "initguid.h"
 #include "ocidl.h"
 #include "featurestagingapi.h"
-// #include "shellscalingapi.h"
+#include "shellscalingapi.h"
 #include "shcore.h"
 #define WINSHLWAPI
 #include "shlwapi.h"

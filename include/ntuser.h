@@ -25,7 +25,6 @@
 #include <immdev.h>
 #include <shellapi.h>
 #include <winternl.h>
-#include "shellscalingapi.h"
 
 #ifndef W32KAPI
 # if defined(_WIN32U_) || defined(WINE_UNIX_LIB)
@@ -35,14 +34,16 @@
 # endif
 #endif
 
+#ifndef MONITOR_DPI_TYPE
 /* avoid including shellscalingapi.h */
-// typedef enum MONITOR_DPI_TYPE
-// {
-//     MDT_EFFECTIVE_DPI   = 0,
-//     MDT_ANGULAR_DPI     = 1,
-//     MDT_RAW_DPI         = 2,
-//     MDT_DEFAULT         = MDT_EFFECTIVE_DPI,
-// } MONITOR_DPI_TYPE;
+    typedef enum MONITOR_DPI_TYPE
+    {
+        MDT_EFFECTIVE_DPI   = 0,
+        MDT_ANGULAR_DPI     = 1,
+        MDT_RAW_DPI         = 2,
+        MDT_DEFAULT         = MDT_EFFECTIVE_DPI,
+    } MONITOR_DPI_TYPE;
+#endif
 
 typedef NTSTATUS (WINAPI *ntuser_callback)( void *args, ULONG len );
 NTSYSAPI NTSTATUS KeUserModeCallback( ULONG id, const void *args, ULONG len, void **ret_ptr, ULONG *ret_len );
