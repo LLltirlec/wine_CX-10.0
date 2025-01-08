@@ -424,7 +424,7 @@ NTSTATUS WINAPI BTCpuProcessInit(void)
     thunk->syscall_thunk.cs    = cs64_sel;
     }
 
-    thunk->unix_thunk.ljmp  = 0xff;
+    
     /* CW HACK 20760 */
     if (use_rosetta2_workaround)
     {
@@ -448,10 +448,11 @@ NTSTATUS WINAPI BTCpuProcessInit(void)
     }
     else
     {
-    thunk->unix_thunk.modrm = 0x2d;
-    thunk->unix_thunk.op    = PtrToUlong( &thunk->unix_thunk.addr );
-    thunk->unix_thunk.addr  = PtrToUlong( unix_call_32to64 );
-    thunk->unix_thunk.cs    = cs64_sel;
+    thunk->unix_thunk.t.ljmp  = 0xff;
+    thunk->unix_thunk.t.modrm = 0x2d;
+    thunk->unix_thunk.t.op    = PtrToUlong( &thunk->unix_thunk.t.addr );
+    thunk->unix_thunk.t.addr  = PtrToUlong( unix_call_32to64 );
+    thunk->unix_thunk.t.cs    = cs64_sel;
     }
 
     NtProtectVirtualMemory( GetCurrentProcess(), (void **)&thunk, &size, PAGE_EXECUTE_READ, &old_prot );
