@@ -92,6 +92,8 @@ static const struct object_ops completion_wait_ops =
     add_queue,                      /* add_queue */
     remove_queue,                   /* remove_queue */
     completion_wait_signaled,       /* signaled */
+    NULL,                      /* get_esync_fd */
+    NULL,                      /* get_msync_idx */
     completion_wait_satisfied,      /* satisfied */
     no_signal,                      /* signal */
     no_get_fd,                      /* get_fd */
