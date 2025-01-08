@@ -21,14 +21,15 @@
 
 #include <shtypes.h>
 
-#ifndef MONITOR_DPI_TYPE
-    typedef enum MONITOR_DPI_TYPE
-    {
-        MDT_EFFECTIVE_DPI   = 0,
-        MDT_ANGULAR_DPI     = 1,
-        MDT_RAW_DPI         = 2,
-        MDT_DEFAULT         = MDT_EFFECTIVE_DPI,
-    } MONITOR_DPI_TYPE;
+#ifndef MONITOR_DPI_TYPE_DEFINED
+#define MONITOR_DPI_TYPE_DEFINED
+typedef enum MONITOR_DPI_TYPE
+{
+    MDT_EFFECTIVE_DPI = 0,
+    MDT_ANGULAR_DPI = 1,
+    MDT_RAW_DPI = 2,
+    MDT_DEFAULT = MDT_EFFECTIVE_DPI,
+} MONITOR_DPI_TYPE;
 #endif
 
 typedef enum PROCESS_DPI_AWARENESS
@@ -40,7 +41,7 @@ typedef enum PROCESS_DPI_AWARENESS
 
 typedef enum
 {
-    DEVICE_PRIMARY   = 0,
+    DEVICE_PRIMARY = 0,
     DEVICE_IMMERSIVE = 1,
 } DISPLAY_DEVICE_TYPE;
 

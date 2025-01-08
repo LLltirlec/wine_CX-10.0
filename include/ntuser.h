@@ -34,8 +34,8 @@
 # endif
 #endif
 
-#ifndef MONITOR_DPI_TYPE
-/* avoid including shellscalingapi.h */
+#ifndef MONITOR_DPI_TYPE_DEFINED
+#define MONITOR_DPI_TYPE_DEFINED
     typedef enum MONITOR_DPI_TYPE
     {
         MDT_EFFECTIVE_DPI   = 0,
