@@ -37,6 +37,7 @@
 #include "wine/server.h"
 #include "wine/debug.h"
 #include "kbd.h"
+#include "shellscalingapi.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(win);
 WINE_DECLARE_DEBUG_CHANNEL(keyboard);

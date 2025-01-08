@@ -31,6 +31,7 @@
 #include "wine/unixlib.h"
 #include "wine/debug.h"
 #include "wine/server.h"
+#include "shellscalingapi.h"
 
 
 /* clipboard.c */
