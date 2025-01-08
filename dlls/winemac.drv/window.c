@@ -1426,7 +1426,7 @@ void macdrv_resize_desktop(void)
 
     macdrv_reset_device_metrics();
     new_desktop_rect = macdrv_get_desktop_rect();
-    if (!NtUserGetWindowRect(hwnd, &current_desktop_rect) ||
+    if (!NtUserGetWindowRect(hwnd, &current_desktop_rect, NtUserGetWinMonitorDpi(hwnd, MDT_DEFAULT)) ||
         !CGRectEqualToRect(cgrect_from_rect(current_desktop_rect), new_desktop_rect))
     {
         send_message_timeout(HWND_BROADCAST, WM_WINE_DESKTOP_RESIZED, 0, 0,
