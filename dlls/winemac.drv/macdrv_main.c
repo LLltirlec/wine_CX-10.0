@@ -658,14 +658,6 @@ NTSTATUS macdrv_GetCurrentProcessExplicitAppUserModelID(WCHAR *buffer, INT size)
     return 0;
 }
 
-NTSTATUS macdrv_client_func(enum macdrv_client_funcs id, const void *params, ULONG size)
-{
-    void *ret_ptr;
-    ULONG ret_len;
-    return KeUserModeCallback(id, params, size, &ret_ptr, &ret_len);
-}
-
-
 static NTSTATUS macdrv_quit_result(void *arg)
 {
     struct quit_result_params *params = arg;
