@@ -1429,13 +1429,11 @@ void macdrv_resize_desktop(void)
     if (!NtUserGetWindowRect(hwnd, &current_desktop_rect) ||
         !CGRectEqualToRect(cgrect_from_rect(current_desktop_rect), new_desktop_rect))
     {
-        send_message_timeout(HWND_BROADCAST, WM_MACDRV_RESET_DEVICE_METRICS, 0, 0,
+        send_message_timeout(HWND_BROADCAST, WM_WINE_DESKTOP_RESIZED, 0, 0,
                              SMTO_ABORTIFHUNG, 2000, NULL);
         NtUserSetWindowPos(hwnd, 0, CGRectGetMinX(new_desktop_rect), CGRectGetMinY(new_desktop_rect),
                            CGRectGetWidth(new_desktop_rect), CGRectGetHeight(new_desktop_rect),
                            SWP_NOZORDER | SWP_NOACTIVATE | SWP_DEFERERASE);
-        send_message_timeout(HWND_BROADCAST, WM_MACDRV_DISPLAYCHANGE, 0, 0,
-                             SMTO_ABORTIFHUNG, 2000, NULL);
     }
 }
 
@@ -1462,7 +1460,6 @@ LRESULT macdrv_DesktopWindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_DISPLAYCHANGE:
         macdrv_resize_desktop();
         break;
-    }
     }
     return NtUserMessageCall(hwnd, msg, wp, lp, 0, NtUserDefWindowProc, FALSE);
 }
