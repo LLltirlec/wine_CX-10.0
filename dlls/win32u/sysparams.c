@@ -36,7 +36,6 @@
 #include "d3dkmdt.h"
 #include "wine/wingdi16.h"
 #include "wine/server.h"
-#include "shellscalingapi.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(system);
 

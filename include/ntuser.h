@@ -25,6 +25,7 @@
 #include <immdev.h>
 #include <shellapi.h>
 #include <winternl.h>
+#include "shellscalingapi.h"
 
 #ifndef W32KAPI
 # if defined(_WIN32U_) || defined(WINE_UNIX_LIB)
