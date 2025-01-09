@@ -328,6 +328,7 @@ struct glsl_shader_private
         struct glsl_cs_compiled_shader *cs;
     } gl_shaders;
     unsigned int num_gl_shaders, shader_array_size;
+    DWORD clipplane_emulation;
 };
 
 struct glsl_ffp_vertex_shader
@@ -8855,8 +8856,7 @@ static void shader_glsl_generate_shader_epilogue(const struct wined3d_shader_con
 
 /* Context activation is done by the caller. */
 static GLuint shader_glsl_generate_compute_shader(const struct wined3d_context_gl *context_gl,
-        struct wined3d_string_buffer *buffer, struct wined3d_string_buffer_list *string_buffers,
-        const struct wined3d_shader *shader)
+        struct shader_glsl_priv *priv, const struct wined3d_shader *shader)
 {
     const struct wined3d_shader_thread_group_size *thread_group_size = &shader->u.cs.thread_group_size;
     struct wined3d_string_buffer_list *string_buffers = &priv->string_buffers;
@@ -10139,12 +10139,6 @@ static GLuint shader_glsl_generate_ffp_fragment_shader(struct shader_glsl_priv *
             else
                 shader_addline(buffer, "ffp_texcoord[%u] = vec4(0.0);\n", stage);
         }
-    }
-    if (lowest_disabled_stage < 7 && settings->emul_clipplanes)
-    {
-        shader_addline(buffer, "ffp_texcoord[7] = %s[7];\n",
-                legacy_syntax ? "gl_TexCoord" : "ffp_varying_texcoord");
-        shader_addline(buffer, "if (any(lessThan(ffp_texcoord[7], vec4(0.0)))) discard;\n");
     }
 
     if (legacy_syntax && settings->fog != WINED3D_FFP_PS_FOG_OFF)
