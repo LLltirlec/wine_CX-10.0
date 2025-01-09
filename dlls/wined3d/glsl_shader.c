@@ -10691,7 +10691,7 @@ static void set_glsl_shader_program(const struct wined3d_context_gl *context_gl,
         struct glsl_ffp_vertex_shader *ffp_shader;
         struct wined3d_ffp_vs_settings settings;
 
-        wined3d_ffp_get_vs_settings(state, &context_gl->c.stream_info, d3d_info, &settings);
+        wined3d_ffp_get_vs_settings(&context_gl->c, state, &context_gl->c.stream_info, d3d_info, &settings);
         // ffp_shader = shader_glsl_find_ffp_vertex_shader(priv, gl_info, &settings);
         ffp_shader = shader_glsl_find_ffp_vertex_shader(priv, context_gl, &settings);
         vs_id = ffp_shader->id;

@@ -2755,6 +2755,9 @@ struct wined3d_ffp_vs
     struct wined3d_shader *shader;
 };
 
+void wined3d_ffp_get_vs_settings(const struct wined3d_context *context, const struct wined3d_state *state, const struct wined3d_stream_info *si,
+        const struct wined3d_d3d_info *d3d_info, struct wined3d_ffp_vs_settings *settings);
+        
 void wined3d_ffp_get_vs_settings(const struct wined3d_state *state, const struct wined3d_stream_info *si,
         const struct wined3d_d3d_info *d3d_info, struct wined3d_ffp_vs_settings *settings);
 
