@@ -2038,7 +2038,8 @@ int __cdecl main( int argc, char *argv[] )
         ProcessRunKeys( HKEY_CURRENT_USER, L"Run", FALSE, FALSE );
         ProcessStartupItems();
     }
-
+    
+done:
     WINE_TRACE("Operation done\n");
 
     SetEvent( event );
