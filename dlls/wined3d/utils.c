@@ -6587,6 +6587,141 @@ void wined3d_ffp_get_vs_settings_with_context(const struct wined3d_context *cont
     settings->emulated_clipplanes = find_emulated_clipplanes(context, state);
 }
 
+void wined3d_ffp_get_vs_settings_withot_context(const struct wined3d_state *state, const struct wined3d_stream_info *si,
+        const struct wined3d_d3d_info *d3d_info, struct wined3d_ffp_vs_settings *settings)
+{
+    enum wined3d_material_color_source diffuse_source, emissive_source, ambient_source, specular_source;
+    const struct wined3d_vertex_declaration *vdecl = state->vertex_declaration;
+    unsigned int coord_idx, i;
+
+    memset(settings, 0, sizeof(*settings));
+
+    if (vdecl->position_transformed)
+    {
+        settings->transformed = 1;
+        settings->point_size = state->primitive_type == WINED3D_PT_POINTLIST;
+        settings->per_vertex_point_size = vdecl->point_size;
+        settings->diffuse = vdecl->diffuse;
+        if (!state->render_states[WINED3D_RS_FOGENABLE])
+            settings->fog_mode = WINED3D_FFP_VS_FOG_OFF;
+        else if (state->render_states[WINED3D_RS_FOGTABLEMODE] != WINED3D_FOG_NONE)
+            settings->fog_mode = WINED3D_FFP_VS_FOG_DEPTH;
+        else
+            settings->fog_mode = WINED3D_FFP_VS_FOG_FOGCOORD;
+
+        for (i = 0; i < WINED3D_MAX_FFP_TEXTURES; ++i)
+        {
+            coord_idx = state->texture_states[i][WINED3D_TSS_TEXCOORD_INDEX];
+            if (coord_idx < WINED3D_MAX_FFP_TEXTURES && (vdecl->texcoords & (1u << coord_idx)))
+                settings->texcoords |= 1u << i;
+            settings->texgen[i] = state->texture_states[i][WINED3D_TSS_TEXCOORD_INDEX];
+        }
+        if (d3d_info->full_ffp_varyings)
+            settings->texcoords = wined3d_mask_from_size(WINED3D_MAX_FFP_TEXTURES);
+
+        if (d3d_info->emulated_flatshading)
+            settings->flatshading = state->render_states[WINED3D_RS_SHADEMODE] == WINED3D_SHADE_FLAT;
+        else
+            settings->flatshading = FALSE;
+
+        settings->swizzle_map = si->swizzle_map;
+
+        return;
+    }
+
+    switch (state->render_states[WINED3D_RS_VERTEXBLEND])
+    {
+        case WINED3D_VBF_DISABLE:
+        case WINED3D_VBF_1WEIGHTS:
+        case WINED3D_VBF_2WEIGHTS:
+        case WINED3D_VBF_3WEIGHTS:
+            settings->vertexblends = state->render_states[WINED3D_RS_VERTEXBLEND];
+            break;
+        default:
+            FIXME("Unsupported vertex blending: %d\n", state->render_states[WINED3D_RS_VERTEXBLEND]);
+            break;
+    }
+
+    settings->clipping = state->render_states[WINED3D_RS_CLIPPING]
+            && state->render_states[WINED3D_RS_CLIPPLANEENABLE];
+    settings->diffuse = vdecl->diffuse;
+    settings->normal = vdecl->normal;
+    settings->normalize = settings->normal && state->render_states[WINED3D_RS_NORMALIZENORMALS];
+    settings->lighting = !!state->render_states[WINED3D_RS_LIGHTING];
+    settings->localviewer = !!state->render_states[WINED3D_RS_LOCALVIEWER];
+    settings->specular_enable = !!state->render_states[WINED3D_RS_SPECULARENABLE];
+    settings->point_size = state->primitive_type == WINED3D_PT_POINTLIST;
+    settings->per_vertex_point_size = vdecl->point_size;
+
+    wined3d_get_material_colour_source(&diffuse_source, &emissive_source,
+            &ambient_source, &specular_source, state);
+    settings->diffuse_source = diffuse_source;
+    settings->emissive_source = emissive_source;
+    settings->ambient_source = ambient_source;
+    settings->specular_source = specular_source;
+
+    for (i = 0; i < WINED3D_MAX_FFP_TEXTURES; ++i)
+    {
+        coord_idx = state->texture_states[i][WINED3D_TSS_TEXCOORD_INDEX];
+        if (coord_idx < WINED3D_MAX_FFP_TEXTURES && (vdecl->texcoords & (1u << coord_idx)))
+            settings->texcoords |= 1u << i;
+        settings->texgen[i] = state->texture_states[i][WINED3D_TSS_TEXCOORD_INDEX];
+    }
+    if (d3d_info->full_ffp_varyings)
+        settings->texcoords = wined3d_mask_from_size(WINED3D_MAX_FFP_TEXTURES);
+
+    for (i = 0; i < WINED3D_MAX_ACTIVE_LIGHTS; ++i)
+    {
+        if (!state->light_state.lights[i])
+            continue;
+
+        switch (state->light_state.lights[i]->OriginalParms.type)
+        {
+            case WINED3D_LIGHT_POINT:
+                ++settings->point_light_count;
+                break;
+            case WINED3D_LIGHT_SPOT:
+                ++settings->spot_light_count;
+                break;
+            case WINED3D_LIGHT_DIRECTIONAL:
+                ++settings->directional_light_count;
+                break;
+            case WINED3D_LIGHT_PARALLELPOINT:
+                ++settings->parallel_point_light_count;
+                break;
+            default:
+                FIXME("Unhandled light type %#x.\n", state->light_state.lights[i]->OriginalParms.type);
+                break;
+        }
+    }
+
+    if (!state->render_states[WINED3D_RS_FOGENABLE])
+        settings->fog_mode = WINED3D_FFP_VS_FOG_OFF;
+    else if (state->render_states[WINED3D_RS_FOGTABLEMODE] != WINED3D_FOG_NONE)
+    {
+        settings->fog_mode = WINED3D_FFP_VS_FOG_DEPTH;
+
+        if (state->transforms[WINED3D_TS_PROJECTION]._14 == 0.0f
+                && state->transforms[WINED3D_TS_PROJECTION]._24 == 0.0f
+                && state->transforms[WINED3D_TS_PROJECTION]._34 == 0.0f
+                && state->transforms[WINED3D_TS_PROJECTION]._44 == 1.0f)
+            settings->ortho_fog = 1;
+    }
+    else if (state->render_states[WINED3D_RS_FOGVERTEXMODE] == WINED3D_FOG_NONE)
+        settings->fog_mode = WINED3D_FFP_VS_FOG_FOGCOORD;
+    else if (state->render_states[WINED3D_RS_RANGEFOGENABLE])
+        settings->fog_mode = WINED3D_FFP_VS_FOG_RANGE;
+    else
+        settings->fog_mode = WINED3D_FFP_VS_FOG_DEPTH;
+
+    if (d3d_info->emulated_flatshading)
+        settings->flatshading = state->render_states[WINED3D_RS_SHADEMODE] == WINED3D_SHADE_FLAT;
+    else
+        settings->flatshading = FALSE;
+
+    settings->swizzle_map = si->swizzle_map;
+}
+
 int wined3d_ffp_vertex_program_key_compare(const void *key, const struct wine_rb_entry *entry)
 {
     const struct wined3d_ffp_vs_settings *ka = key;
