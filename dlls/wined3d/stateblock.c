@@ -2939,7 +2939,7 @@ static struct wined3d_shader *get_ffp_vertex_shader(struct wined3d_device *devic
      * This is nevertheless janky, and we'd like to get rid of it. Eventually
      * once the HLSL backend is used everywhere, we can get rid of the swizzle
      * map from wined3d_ffp_vs_settings. */
-    wined3d_ffp_get_vs_settings(state, &dummy_stream_info, &device->adapter->d3d_info, &settings);
+    wined3d_ffp_get_vs_settings_without_context(state, &dummy_stream_info, &device->adapter->d3d_info, &settings);
 
     if ((entry = wine_rb_get(&device->ffp_vertex_shaders, &settings)))
         return WINE_RB_ENTRY_VALUE(entry, struct wined3d_ffp_vs, entry.entry)->shader;

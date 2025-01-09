@@ -6451,7 +6451,7 @@ int wined3d_ffp_frag_program_key_compare(const void *key, const struct wine_rb_e
     return memcmp(ka, kb, sizeof(*ka));
 }
 
-void wined3d_ffp_get_vs_settings(const struct wined3d_context *context, const struct wined3d_state *state, const struct wined3d_stream_info *si,
+void wined3d_ffp_get_vs_settings_with_context(const struct wined3d_context *context, const struct wined3d_state *state, const struct wined3d_stream_info *si,
         const struct wined3d_d3d_info *d3d_info, struct wined3d_ffp_vs_settings *settings)
 {
     enum wined3d_material_color_source diffuse_source, emissive_source, ambient_source, specular_source;
