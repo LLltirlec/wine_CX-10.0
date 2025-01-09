@@ -3753,6 +3753,7 @@ VkCommandBuffer wined3d_context_vk_apply_draw_state(struct wined3d_context_vk *c
     struct wined3d_device_vk *device_vk = wined3d_device_vk(context_vk->c.device);
     const struct wined3d_d3d_info *d3d_info = context_vk->c.d3d_info;
     const struct wined3d_vk_info *vk_info = context_vk->vk_info;
+    struct wined3d_graphics_pipeline_key_vk *key;
     const struct wined3d_blend_state *b = state->blend_state;
     VkSampleCountFlagBits prev_sample_count, sample_count;
     bool dual_source_blend = b && b->dual_source;
