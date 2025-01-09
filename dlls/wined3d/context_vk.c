@@ -4029,8 +4029,8 @@ VkCommandBuffer wined3d_context_vk_apply_draw_state(struct wined3d_context_vk *c
             viewport->height = -viewport->height;
         }
 
-        VK_CALL(vkCmdSetViewport(vk_command_buffer, 0, key->vp_desc.viewportCount, &key->viewports));
-        VK_CALL(vkCmdSetScissor(vk_command_buffer, 0, key->vp_desc.viewportCount, &key->scissors));
+        VK_CALL(vkCmdSetViewport(vk_command_buffer, 0, key->vp_desc.viewportCount, key->viewports));
+        VK_CALL(vkCmdSetScissor(vk_command_buffer, 0, key->vp_desc.viewportCount, key->scissors));
     }
 
     if (vk_info->dynamic_state2 && context_vk->c.update_primitive_type)
