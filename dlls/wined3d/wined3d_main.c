@@ -390,7 +390,7 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
                 TRACE("Looking for \"%s\"\n", token);
                 if(strstr(cmdline, token)) {
                     TRACE("Disabling GLSL for this HL2 mod\n");
-                    wined3d_settings.shader_backend = WINED3D_SHADER_BACKEND_ARB;
+                    wined3d_settings.shader_backend = WINED3D_SHADER_BACKEND_GLSL_VKD3D;
                     break;
                 }
                 token = strtok(NULL, ";");
