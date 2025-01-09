@@ -3961,12 +3961,13 @@ VkCommandBuffer wined3d_context_vk_apply_draw_state(struct wined3d_context_vk *c
             || wined3d_context_is_graphics_state_dirty(&context_vk->c, STATE_SCISSORRECT)
             || wined3d_context_is_graphics_state_dirty(&context_vk->c, STATE_RASTERIZER))
     {
+        unsigned int i;
         // unsigned int viewport_count = (context_vk->vk_info->multiple_viewports ? WINED3D_MAX_VIEWPORTS : 1);
         // VkViewport viewports[WINED3D_MAX_VIEWPORTS];
         // VkRect2D scissors[WINED3D_MAX_VIEWPORTS];
         key->vp_desc.viewportCount = (context_vk->vk_info->multiple_viewports ? WINED3D_MAX_VIEWPORTS : 1);
         key->vp_desc.scissorCount = key->vp_desc.viewportCount;
-        unsigned int i;
+        
 
         // for (i = 0; i < viewport_count; ++i)
         for (i = 0; i < key->vp_desc.viewportCount; ++i)
@@ -4028,8 +4029,8 @@ VkCommandBuffer wined3d_context_vk_apply_draw_state(struct wined3d_context_vk *c
             viewport->height = -viewport->height;
         }
 
-        VK_CALL(vkCmdSetViewport(vk_command_buffer, 0, viewport_count, viewports));
-        VK_CALL(vkCmdSetScissor(vk_command_buffer, 0, viewport_count, scissors));
+        VK_CALL(vkCmdSetViewport(vk_command_buffer, 0, key->vp_desc.viewportCount, &key->viewports));
+        VK_CALL(vkCmdSetScissor(vk_command_buffer, 0, key->vp_desc.viewportCount, &key->scissors));
     }
 
     if (vk_info->dynamic_state2 && context_vk->c.update_primitive_type)
