@@ -71,7 +71,7 @@ jobs:
           tar czf wine-macos-x64.tar.gz wine/build/
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wine-macos-x64
           path: wine-macos-x64.tar.gz
