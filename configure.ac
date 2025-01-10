@@ -2063,12 +2063,22 @@ case $host_os in
     ;;
 esac
 
-if test "$wine_use_preloader" = "yes"
-then
-  test "$wine_binary" = wine || WINE_IGNORE_FILE(loader/wine-preloader)
-  WINELOADER_PROGRAMS="$WINELOADER_PROGRAMS $wine_binary-preloader"
-  AC_DEFINE(HAVE_WINE_PRELOADER, 1, [Define to 1 if the Wine preloader is being used.])
-fi
+case $host_os in
+  linux*)
+    if test $HOST_ARCH != unknown
+    then
+        test "$wine_binary" = wine || WINE_IGNORE_FILE(loader/wine-preloader)
+        WINELOADER_PROGRAMS="$WINELOADER_PROGRAMS $wine_binary-preloader"
+    fi
+    ;;
+  darwin*|macosx*)
+    if test "$wine_can_build_preloader" = "yes"
+    then
+        test "$wine_binary" = wine || WINE_IGNORE_FILE(loader/wine-preloader)
+        WINELOADER_PROGRAMS="$WINELOADER_PROGRAMS $wine_binary-preloader"
+    fi
+    ;;
+esac
 
 dnl **** Check for functions ****
 

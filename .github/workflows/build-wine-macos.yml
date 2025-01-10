@@ -53,7 +53,8 @@ jobs:
           cd wine/config
           PATH="$(brew --prefix bison)/bin:$PATH" arch -x86_64 ../configure \
             --prefix="${GITHUB_WORKSPACE}/wine/build" \
-            --enable-win64
+            --enable-win64 \
+            --enable-wine64
 
       - name: Build Wine
         run: |
@@ -76,16 +77,3 @@ jobs:
           name: wine-macos-x64
           path: wine-macos-x64.tar.gz
           retention-days: 7
-
-      - name: Create Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: wine-macos-${{ github.sha }}
-          name: Wine MacOS Build ${{ github.sha }}
-          draft: false
-          prerelease: false
-          files: wine-macos-x64.tar.gz
