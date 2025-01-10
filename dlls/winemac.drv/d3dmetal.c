@@ -265,8 +265,8 @@ static BOOL WINAPI my_GetMonitorInfoA(HMONITOR monitor, LPMONITORINFO info)
 
 static BOOL WINAPI my_AdjustWindowRectEx(LPRECT p1,DWORD p2,BOOL p3,DWORD p4)
 {
-    TRACE("AdjustWindowRectEx %p %u %d %u\n", p1, p2, p3, p4);
-    return AdjustWindowRectEx(p1, p2, p3, p4);
+    TRACE("adjust_window_rect %p %u %d %u\n", p1, p2, p3, p4);
+    return adjust_window_rect(p1, p2, p3, p4, get_system_dpi());
 }
 
 static LONG_PTR WINAPI my_GetWindowLongPtrW(HWND h,int nIndex)
