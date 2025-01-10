@@ -266,8 +266,8 @@ extern void macdrv_status_item_mouse_button(const macdrv_event *event);
 extern void macdrv_status_item_mouse_move(const macdrv_event *event);
 
 extern void check_retina_status(void);
-extern void macdrv_init_display_devices(BOOL force);
-extern void macdrv_resize_desktop(void);
+// extern void macdrv_init_display_devices(BOOL force);
+// extern void macdrv_resize_desktop(void);
 extern void init_user_driver(void);
 
 extern struct format_entry *get_format_entries(CFTypeRef pasteboard, UINT *entries_size);

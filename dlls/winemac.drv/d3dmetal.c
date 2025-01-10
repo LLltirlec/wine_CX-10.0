@@ -70,8 +70,9 @@ void OnMainThread(dispatch_block_t block);
 
 static void my_macdrv_init_display_devices(BOOL p1)
 {
-    TRACE("macdrv_init_display_devices %d\n", p1);
-    macdrv_init_display_devices(p1);
+    // TRACE("macdrv_init_display_devices %d\n", p1);
+    // macdrv_init_display_devices(p1);
+    NtUserCallNoParam(NtUserCallNoParam_DisplayModeChanged);
 }
 
 static struct macdrv_win_data *my_get_win_data(HWND hwnd)
