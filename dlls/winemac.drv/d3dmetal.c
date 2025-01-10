@@ -64,7 +64,7 @@ struct macdrv_functions_t
     LONG_PTR(WINAPI*SetWindowLongPtrW)(HWND,INT,LONG_PTR);
 };
 C_ASSERT(sizeof(struct macdrv_functions_t) == 192);
-// C_ASSERT(sizeof(struct macdrv_win_data) == 120);
+C_ASSERT(sizeof(struct macdrv_win_data) == 120);
 
 void OnMainThread(dispatch_block_t block);
 
