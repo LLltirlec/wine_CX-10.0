@@ -30,6 +30,8 @@
 #define WIN32_NO_STATUS
 #include "macdrv.h"
 #include "shellapi.h"
+#include "ntgdi_private.h"
+#include "ntuser_private.h"
 #include "wine/server.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(macdrv_d3dmtl);
