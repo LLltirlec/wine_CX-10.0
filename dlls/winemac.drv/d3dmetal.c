@@ -30,8 +30,6 @@
 #define WIN32_NO_STATUS
 #include "macdrv.h"
 #include "shellapi.h"
-#include "ntgdi_private.h"
-#include "ntuser_private.h"
 #include "wine/server.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(macdrv_d3dmtl);
@@ -267,8 +265,8 @@ static BOOL WINAPI my_GetMonitorInfoA(HMONITOR monitor, LPMONITORINFO info)
 
 static BOOL WINAPI my_AdjustWindowRectEx(LPRECT p1,DWORD p2,BOOL p3,DWORD p4)
 {
-    TRACE("adjust_window_rect %p %u %d %u\n", p1, p2, p3, p4);
-    return adjust_window_rect(p1, p2, p3, p4, get_system_dpi());
+    TRACE("NtUserAdjustWindowRect %p %u %d %u\n", p1, p2, p3, p4);
+    return NtUserAdjustWindowRect(p1, p2, p3, p4, get_system_dpi());
 }
 
 static LONG_PTR WINAPI my_GetWindowLongPtrW(HWND h,int nIndex)
