@@ -1460,7 +1460,7 @@ LRESULT macdrv_DesktopWindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     // case WM_DISPLAYCHANGE:
     //     macdrv_resize_desktop();
     //     break;
-    // }
+    }
     return NtUserMessageCall(hwnd, msg, wp, lp, 0, NtUserDefWindowProc, FALSE);
 }
 
