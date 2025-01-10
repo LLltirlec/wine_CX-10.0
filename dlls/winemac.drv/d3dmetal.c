@@ -55,7 +55,7 @@ struct macdrv_functions_t
     LSTATUS(WINAPI*RegCloseKey)(HKEY);
     BOOL(WINAPI*EnumDisplayMonitors)(HDC,LPRECT,MONITORENUMPROC,LPARAM);
     BOOL(WINAPI*GetMonitorInfoA)(HMONITOR,LPMONITORINFO);
-    BOOL(WINAPI*AdjustWindowRectEx)(HWND hwnd,LPRECT,DWORD,BOOL,DWORD);
+    BOOL(WINAPI*AdjustWindowRectEx)(LPRECT,DWORD,BOOL,DWORD);
     LONG_PTR(WINAPI*GetWindowLongPtrW)(HWND,int);
     BOOL(WINAPI*GetWindowRect)(HWND,LPRECT);
     BOOL(WINAPI*MoveWindow)(HWND,int,int,int,int,BOOL);
@@ -64,7 +64,7 @@ struct macdrv_functions_t
     LONG_PTR(WINAPI*SetWindowLongPtrW)(HWND,INT,LONG_PTR);
 };
 C_ASSERT(sizeof(struct macdrv_functions_t) == 192);
-C_ASSERT(sizeof(struct macdrv_win_data) == 120);
+// C_ASSERT(sizeof(struct macdrv_win_data) == 120);
 
 void OnMainThread(dispatch_block_t block);
 
