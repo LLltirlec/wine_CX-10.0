@@ -263,10 +263,11 @@ static BOOL WINAPI my_GetMonitorInfoA(HMONITOR monitor, LPMONITORINFO info)
     return ret;
 }
 
-static BOOL WINAPI my_AdjustWindowRectEx(LPRECT p1,DWORD p2,BOOL p3,DWORD p4)
+static BOOL WINAPI my_AdjustWindowRectEx(HWND hwnd, LPRECT p1,DWORD p2,BOOL p3,DWORD p4)
 {
+    UINT dpi = NtUserGetWinMonitorDpi(hwnd, MDT_RAW_DPI);
     TRACE("NtUserAdjustWindowRect %p %u %d %u\n", p1, p2, p3, p4);
-    return NtUserAdjustWindowRect(p1, p2, p3, p4, get_system_dpi());
+    return NtUserAdjustWindowRect(p1, p2, p3, p4, dpi);
 }
 
 static LONG_PTR WINAPI my_GetWindowLongPtrW(HWND h,int nIndex)
