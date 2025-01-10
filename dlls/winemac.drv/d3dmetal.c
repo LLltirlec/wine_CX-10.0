@@ -55,7 +55,7 @@ struct macdrv_functions_t
     LSTATUS(WINAPI*RegCloseKey)(HKEY);
     BOOL(WINAPI*EnumDisplayMonitors)(HDC,LPRECT,MONITORENUMPROC,LPARAM);
     BOOL(WINAPI*GetMonitorInfoA)(HMONITOR,LPMONITORINFO);
-    BOOL(WINAPI*AdjustWindowRectEx)(LPRECT,DWORD,BOOL,DWORD);
+    BOOL(WINAPI*AdjustWindowRectEx)(HWND hwnd, LPRECT,DWORD,BOOL,DWORD);
     LONG_PTR(WINAPI*GetWindowLongPtrW)(HWND,int);
     BOOL(WINAPI*GetWindowRect)(HWND,LPRECT);
     BOOL(WINAPI*MoveWindow)(HWND,int,int,int,int,BOOL);
